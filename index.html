@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>India Itinerary 2027</title>
+  <meta name="description" content="Our family plan for India, Dec 31, 2026 to Feb 5, 2027: calendar, day by day timings, train tickets, booking dates, to-do list and budget.">
+  <meta name="theme-color" content="#F3F5F2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#14191B" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to the plan</a>
+
+  <header class="masthead">
+    <div class="wrap masthead-row">
+      <div class="title-block">
+        <h1 id="trip-title">India Itinerary 2027</h1>
+        <p class="subtitle" id="trip-sub">Chennai, Kerala, Salem, the temple loop and Rajasthan</p>
+      </div>
+      <div class="masthead-actions">
+        <span class="save-state" id="save-state" hidden></span>
+        <div class="cur-toggle" role="group" aria-label="Show prices in">
+          <button type="button" data-set-cur="INR" aria-pressed="true">₹ Rupees</button>
+          <button type="button" data-set-cur="USD" aria-pressed="false">$ Dollars</button>
+        </div>
+        <button class="btn btn-primary" id="open-share" type="button">Share and save</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <section class="wrap hero" id="hero" aria-live="polite"></section>
+
+  <nav class="tabs" aria-label="Sections">
+    <div class="wrap tabs-row" role="tablist">
+      <button role="tab" data-view="calendar" id="tab-calendar">Calendar</button>
+      <button role="tab" data-view="globe" id="tab-globe">Globe</button>
+      <button role="tab" data-view="days" id="tab-days">Day by day</button>
+      <button role="tab" data-view="tickets" id="tab-tickets">Tickets</button>
+      <button role="tab" data-view="todo" id="tab-todo">To-do</button>
+      <button role="tab" data-view="budget" id="tab-budget">Budget</button>
+      <button role="tab" data-view="info" id="tab-info">Good to know</button>
+    </div>
+  </nav>
+
+  <main class="wrap" id="main" tabindex="-1">
+    <p class="loading">Loading the plan…</p>
+  </main>
+
+  <footer class="wrap footer">
+    <p id="updated-line"></p>
+    <p id="rate-foot"></p>
+    <p>Train times and fares come from public timetables and change. Always confirm on <a href="https://www.irctc.co.in/" rel="noopener" target="_blank">IRCTC</a> before booking.</p>
+  </footer>
+
+  <dialog id="dialog" aria-labelledby="dialog-title">
+    <form method="dialog" id="dialog-form" class="dialog-form" novalidate></form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>

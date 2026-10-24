@@ -1,0 +1,2090 @@
+{
+ "meta": {
+  "title": "India Itinerary 2027",
+  "start": "2026-12-31",
+  "end": "2027-02-05",
+  "defaultPeople": 15,
+  "usdRate": 95,
+  "updated": "2026-10-24T20:00:00-04:00",
+  "updatedBy": "Surya",
+  "rateMode": "live",
+  "repo": "Surya0901/india-itinerary-2027"
+ },
+ "people": [
+  "Surya",
+  "Brother",
+  "Mom",
+  "Everyone"
+ ],
+ "trips": [
+  {
+   "id": "chennai",
+   "name": "Chennai",
+   "color": "#2F6DB5"
+  },
+  {
+   "id": "kerala",
+   "name": "Kerala",
+   "color": "#13837A"
+  },
+  {
+   "id": "home",
+   "name": "Salem, at home",
+   "color": "#3E7D3A"
+  },
+  {
+   "id": "trichy",
+   "name": "Trichy",
+   "color": "#A2672A"
+  },
+  {
+   "id": "pongal",
+   "name": "Pongal",
+   "color": "#B23A2E"
+  },
+  {
+   "id": "temples",
+   "name": "Temple loop",
+   "color": "#C46A12"
+  },
+  {
+   "id": "rajasthan",
+   "name": "Rajasthan",
+   "color": "#C2457A"
+  },
+  {
+   "id": "travel",
+   "name": "Travel day",
+   "color": "#67737A"
+  },
+  {
+   "id": "flight",
+   "name": "Flying home",
+   "color": "#6B4AA0"
+  }
+ ],
+ "days": [
+  {
+   "date": "2026-12-31",
+   "trip": "chennai",
+   "place": "Chennai",
+   "summary": "Land in Chennai, check in at Aarav Villa",
+   "steps": [
+    {
+     "time": "",
+     "text": "Land in Chennai and check in at Aarav Villa"
+    }
+   ],
+   "note": "Jan 1 to 4 are free days in Chennai."
+  },
+  {
+   "date": "2027-01-01",
+   "trip": "chennai",
+   "place": "Chennai",
+   "summary": "New Year's Day",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-01-02",
+   "trip": "chennai",
+   "place": "Chennai",
+   "summary": "Free day",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-01-03",
+   "trip": "chennai",
+   "place": "Chennai",
+   "summary": "Free day",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-01-04",
+   "trip": "chennai",
+   "place": "Chennai",
+   "summary": "Free day, pack for Kerala",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-01-05",
+   "trip": "kerala",
+   "place": "Chennai → Kerala",
+   "summary": "Check out, overnight train at 8:55 PM",
+   "steps": [
+    {
+     "time": "11:00 AM",
+     "text": "Check out of Aarav Villa (ask about leaving bags until evening)"
+    },
+    {
+     "time": "7:45 PM",
+     "text": "Reach Chennai Central"
+    },
+    {
+     "time": "8:55 PM",
+     "text": "Chennai Central → Alappuzha, overnight",
+     "ref": "22639",
+     "booking": true
+    }
+   ],
+   "note": ""
+  },
+  {
+   "date": "2027-01-06",
+   "trip": "kerala",
+   "place": "Alappuzha",
+   "summary": "Arrive 10:40 AM, overnight houseboat",
+   "steps": [
+    {
+     "time": "10:40 AM",
+     "text": "Arrive Alappuzha"
+    },
+    {
+     "time": "12:00 PM",
+     "text": "Board the houseboats (2 boats of 3 to 4 bedrooms for 15)"
+    },
+    {
+     "time": "Afternoon",
+     "text": "Backwaters cruise, lunch and dinner on board"
+    },
+    {
+     "time": "Night",
+     "text": "Sleep on the houseboat. Boats anchor at 5:30 PM"
+    }
+   ],
+   "note": ""
+  },
+  {
+   "date": "2027-01-07",
+   "trip": "kerala",
+   "place": "Alappuzha → Guruvayur",
+   "summary": "Train to Thrissur, evening darshan",
+   "steps": [
+    {
+     "time": "9:00 AM",
+     "text": "Leave the houseboat"
+    },
+    {
+     "time": "11:55 AM",
+     "text": "Alappuzha → Thrissur, arrive 2:30 PM",
+     "ref": "16346",
+     "booking": true
+    },
+    {
+     "time": "2:45 PM",
+     "text": "KSRTC bus to Guruvayur, about 45 min"
+    },
+    {
+     "time": "3:45 PM",
+     "text": "Check in"
+    },
+    {
+     "time": "4:30 PM",
+     "text": "Evening darshan at Guruvayur temple"
+    }
+   ],
+   "note": "The temple closes for a few hours in the early afternoon, so plan the visit for the evening."
+  },
+  {
+   "date": "2027-01-08",
+   "trip": "kerala",
+   "place": "Guruvayur → Salem",
+   "summary": "Vande Bharat 3:20 PM, home 7:22 PM",
+   "steps": [
+    {
+     "time": "Early",
+     "text": "Morning darshan, if you want a second one"
+    },
+    {
+     "time": "9:00 AM",
+     "text": "Breakfast, check out"
+    },
+    {
+     "time": "12:30 PM",
+     "text": "KSRTC bus to Thrissur, about 45 min"
+    },
+    {
+     "time": "3:20 PM",
+     "text": "Vande Bharat Thrissur → Salem",
+     "ref": "26652",
+     "booking": true
+    },
+    {
+     "time": "7:22 PM",
+     "text": "Arrive Salem"
+    }
+   ],
+   "note": ""
+  },
+  {
+   "date": "2027-01-09",
+   "trip": "home",
+   "place": "Salem",
+   "summary": "At home",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-01-10",
+   "trip": "home",
+   "place": "Salem",
+   "summary": "At home",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-01-11",
+   "trip": "trichy",
+   "place": "Salem → Trichy",
+   "summary": "8:10 AM train, Srirangam and Jambukeswarar",
+   "steps": [
+    {
+     "time": "8:10 AM",
+     "text": "Salem → Trichy, arrive 12:30 PM",
+     "ref": "16788",
+     "alt": "Sites disagree on its running days. Backup: Vande Bharat 20672 at 4:35 PM, arrives 7:15 PM",
+     "booking": true
+    },
+    {
+     "time": "1:00 PM",
+     "text": "Lunch, check in"
+    },
+    {
+     "time": "2:30 PM",
+     "text": "Srirangam Ranganathaswamy temple"
+    },
+    {
+     "time": "5:30 PM",
+     "text": "Jambukeswarar temple, Thiruvanaikaval"
+    }
+   ],
+   "note": ""
+  },
+  {
+   "date": "2027-01-12",
+   "trip": "trichy",
+   "place": "Trichy → Salem",
+   "summary": "Rockfort, 3:20 PM train home",
+   "steps": [
+    {
+     "time": "7:00 AM",
+     "text": "Rockfort temple, about 400 steps up"
+    },
+    {
+     "time": "10:00 AM",
+     "text": "Breakfast, shopping, check out"
+    },
+    {
+     "time": "3:20 PM",
+     "text": "Trichy → Salem, arrive 7:35 PM",
+     "ref": "22716",
+     "alt": "Some sites list it as Sundays only. Backup: 16231 at 8:30 PM, arrives 12:27 AM",
+     "booking": true
+    }
+   ],
+   "note": ""
+  },
+  {
+   "date": "2027-01-13",
+   "trip": "pongal",
+   "place": "Salem",
+   "summary": "Pongal at home",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-01-14",
+   "trip": "pongal",
+   "place": "Salem",
+   "summary": "Pongal",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-01-15",
+   "trip": "pongal",
+   "place": "Salem",
+   "summary": "Pongal",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-01-16",
+   "trip": "pongal",
+   "place": "Salem",
+   "summary": "Pongal",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-01-17",
+   "trip": "temples",
+   "place": "Salem",
+   "summary": "Pack, leave at 11:45 PM for the 1:10 AM train",
+   "steps": [
+    {
+     "time": "Evening",
+     "text": "Pack light, sleep early"
+    },
+    {
+     "time": "11:45 PM",
+     "text": "Leave home for Salem Junction"
+    },
+    {
+     "time": "1:10 AM",
+     "text": "Salem → Mysuru, overnight (dated Jan 18 on the ticket)",
+     "ref": "16235",
+     "booking": true
+    }
+   ],
+   "note": ""
+  },
+  {
+   "date": "2027-01-18",
+   "trip": "temples",
+   "place": "Mysuru",
+   "summary": "Palace and Chamundi Hill, overnight train at 5:15 PM",
+   "steps": [
+    {
+     "time": "9:30 AM",
+     "text": "Arrive Mysuru Junction, leave bags in the station cloakroom"
+    },
+    {
+     "time": "10:00 AM",
+     "text": "Mysuru Palace, about 2 hours"
+    },
+    {
+     "time": "12:30 PM",
+     "text": "Lunch"
+    },
+    {
+     "time": "1:30 PM",
+     "text": "Chamundi Hill temple and the Nandi statue"
+    },
+    {
+     "time": "3:30 PM",
+     "text": "St Philomena's Church, Devaraja Market"
+    },
+    {
+     "time": "4:45 PM",
+     "text": "Back at the station, collect bags"
+    },
+    {
+     "time": "5:15 PM",
+     "text": "Mysuru → Tirupati, overnight",
+     "ref": "16219",
+     "booking": true
+    }
+   ],
+   "note": ""
+  },
+  {
+   "date": "2027-01-19",
+   "trip": "temples",
+   "place": "Tirumala",
+   "summary": "Arrive 4:05 AM, darshan, night on the hill",
+   "steps": [
+    {
+     "time": "4:05 AM",
+     "text": "Arrive Tirupati"
+    },
+    {
+     "time": "4:30 AM",
+     "text": "Freshen up at Vishnu Nivasam, opposite the station"
+    },
+    {
+     "time": "6:00 AM",
+     "text": "APSRTC bus up the ghat road to Tirumala, about 1 hour"
+    },
+    {
+     "time": "8:00 AM",
+     "text": "Check in to rooms"
+    },
+    {
+     "time": "10:00 AM",
+     "text": "₹300 special entry darshan, allow 3 to 4 hours",
+     "ref": "TTD",
+     "booking": true
+    },
+    {
+     "time": "2:00 PM",
+     "text": "Lunch, rest"
+    },
+    {
+     "time": "Evening",
+     "text": "Akasa Ganga and Papavinasanam, or rest"
+    }
+   ],
+   "note": "If ₹300 tickets are sold out: elders 65+ have a separate quota, and free Sarva Darshan tokens are given out on arrival."
+  },
+  {
+   "date": "2027-01-20",
+   "trip": "temples",
+   "place": "Tirumala → Mantralayam",
+   "summary": "Padmavathi temple, train at 5:25 PM",
+   "steps": [
+    {
+     "time": "Morning",
+     "text": "Free, or walk to Srivari Padalu"
+    },
+    {
+     "time": "11:00 AM",
+     "text": "Check out, bus down the hill"
+    },
+    {
+     "time": "12:30 PM",
+     "text": "Lunch in Tirupati"
+    },
+    {
+     "time": "2:00 PM",
+     "text": "Sri Padmavathi temple, Tiruchanur"
+    },
+    {
+     "time": "4:30 PM",
+     "text": "Tirupati station"
+    },
+    {
+     "time": "5:25 PM",
+     "text": "Tirupati → Mantralayam Road",
+     "ref": "12793",
+     "booking": true
+    },
+    {
+     "time": "11:43 PM",
+     "text": "Arrive, pre-booked vehicles to the rooms, about 30 min"
+    }
+   ],
+   "note": ""
+  },
+  {
+   "date": "2027-01-21",
+   "trip": "temples",
+   "place": "Mantralayam → Salem",
+   "summary": "6 AM darshan, train at 11:20 AM",
+   "steps": [
+    {
+     "time": "6:00 AM",
+     "text": "Tungabhadra river, then Sri Raghavendra Swamy Mutt darshan"
+    },
+    {
+     "time": "9:00 AM",
+     "text": "Breakfast, prasadam"
+    },
+    {
+     "time": "10:15 AM",
+     "text": "Vehicles to the station"
+    },
+    {
+     "time": "11:20 AM",
+     "text": "Mantralayam Road → Salem, overnight",
+     "ref": "11013",
+     "booking": true
+    },
+    {
+     "time": "3:25 AM",
+     "text": "Fri Jan 22: arrive Salem"
+    }
+   ],
+   "note": "To skip the 3:25 AM arrival, stay a second night and take 16381 at 8:05 AM on Jan 22, home 8:50 PM."
+  },
+  {
+   "date": "2027-01-22",
+   "trip": "home",
+   "place": "Salem",
+   "summary": "Home at 3:25 AM, rest",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-01-23",
+   "trip": "rajasthan",
+   "place": "Salem → Bengaluru",
+   "summary": "Day at home, Vande Bharat at 7:25 PM",
+   "steps": [
+    {
+     "time": "Day",
+     "text": "At home. Pack warm layers, Rajasthan nights are cold in January"
+    },
+    {
+     "time": "6:45 PM",
+     "text": "Leave for Salem Junction"
+    },
+    {
+     "time": "7:25 PM",
+     "text": "Vande Bharat Salem → Bengaluru City",
+     "ref": "26652",
+     "booking": true
+    },
+    {
+     "time": "11:00 PM",
+     "text": "Arrive, hotel toward the airport"
+    }
+   ],
+   "note": ""
+  },
+  {
+   "date": "2027-01-24",
+   "trip": "rajasthan",
+   "place": "Bengaluru → Jaipur",
+   "summary": "Flight 8:55 AM, Hawa Mahal, Chokhi Dhani night",
+   "steps": [
+    {
+     "time": "6:45 AM",
+     "text": "Cab to Bengaluru airport"
+    },
+    {
+     "time": "8:55 AM",
+     "text": "Bengaluru → Jaipur, about 2 hr 45 min",
+     "ref": "QP 1362",
+     "alt": "IndiGo 6E 415 at 9:00 AM also flies",
+     "booking": true
+    },
+    {
+     "time": "11:40 AM",
+     "text": "Land Jaipur, van with driver meets you"
+    },
+    {
+     "time": "12:30 PM",
+     "text": "Check in, lunch"
+    },
+    {
+     "time": "2:00 PM",
+     "text": "Hawa Mahal, City Palace, Jantar Mantar"
+    },
+    {
+     "time": "4:30 PM",
+     "text": "Johari and Bapu Bazaar shopping"
+    },
+    {
+     "time": "6:30 PM",
+     "text": "Chokhi Dhani village night: folk shows, camel rides, Rajasthani dinner"
+    }
+   ],
+   "note": ""
+  },
+  {
+   "date": "2027-01-25",
+   "trip": "rajasthan",
+   "place": "Jaipur → Udaipur",
+   "summary": "Amber Fort, flight at 4:55 PM",
+   "steps": [
+    {
+     "time": "8:00 AM",
+     "text": "Amber Fort, opens at 8. About 2.5 hours"
+    },
+    {
+     "time": "10:45 AM",
+     "text": "Photo stop at Jal Mahal"
+    },
+    {
+     "time": "12:00 PM",
+     "text": "Lunch, check out"
+    },
+    {
+     "time": "1:30 PM",
+     "text": "Albert Hall Museum or last shopping"
+    },
+    {
+     "time": "3:30 PM",
+     "text": "To Jaipur airport"
+    },
+    {
+     "time": "4:55 PM",
+     "text": "Jaipur → Udaipur, about 1 hr 15 min",
+     "ref": "6E 7181",
+     "alt": "Small plane, 78 seats. An 11:00 AM flight also runs",
+     "booking": true
+    },
+    {
+     "time": "6:15 PM",
+     "text": "Land Udaipur, about 45 min to the haveli"
+    },
+    {
+     "time": "7:30 PM",
+     "text": "Rooftop dinner by the lake"
+    }
+   ],
+   "note": ""
+  },
+  {
+   "date": "2027-01-26",
+   "trip": "rajasthan",
+   "place": "Udaipur",
+   "summary": "City Palace, camel ride, sunset boat, folk show",
+   "steps": [
+    {
+     "time": "9:00 AM",
+     "text": "City Palace, about 2.5 hours"
+    },
+    {
+     "time": "12:00 PM",
+     "text": "Lunch, Jagdish Temple, old city lanes"
+    },
+    {
+     "time": "2:30 PM",
+     "text": "Camel ride on the Fateh Sagar lakefront, Saheliyon ki Bari"
+    },
+    {
+     "time": "4:45 PM",
+     "text": "Sunset boat from the City Palace jetty, stop at Jag Mandir"
+    },
+    {
+     "time": "7:00 PM",
+     "text": "Dharohar folk dance show at Bagore ki Haveli, about 1 hour"
+    }
+   ],
+   "note": "Republic Day, so expect bigger crowds."
+  },
+  {
+   "date": "2027-01-27",
+   "trip": "rajasthan",
+   "place": "Udaipur → Salem",
+   "summary": "Flight 9:30 AM, Vande Bharat home by 5:52 PM",
+   "steps": [
+    {
+     "time": "7:30 AM",
+     "text": "Check out"
+    },
+    {
+     "time": "7:45 AM",
+     "text": "Drive to Udaipur airport, about 45 min"
+    },
+    {
+     "time": "9:30 AM",
+     "text": "Udaipur → Bengaluru, 2 hr 25 min",
+     "ref": "6E 412",
+     "booking": true
+    },
+    {
+     "time": "11:55 AM",
+     "text": "Land, cab to Bengaluru Cantonment station, 1 to 1.5 hours"
+    },
+    {
+     "time": "2:20 PM",
+     "text": "Vande Bharat Bengaluru Cantonment → Salem",
+     "ref": "20641",
+     "alt": "Backup: 22665 Uday Express from Bengaluru City at 2:15 PM, arrives 6:02 PM",
+     "booking": true
+    },
+    {
+     "time": "5:52 PM",
+     "text": "Arrive Salem"
+    }
+   ],
+   "note": ""
+  },
+  {
+   "date": "2027-01-28",
+   "trip": "home",
+   "place": "Salem",
+   "summary": "Optional day trip: Yercaud",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-01-29",
+   "trip": "home",
+   "place": "Salem",
+   "summary": "Optional day trip: Hogenakkal Falls",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-01-30",
+   "trip": "home",
+   "place": "Salem",
+   "summary": "Optional day trip: Kolli Hills",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-01-31",
+   "trip": "home",
+   "place": "Salem",
+   "summary": "Rest",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-02-01",
+   "trip": "home",
+   "place": "Salem",
+   "summary": "Optional day trip: Namakkal or Krishnagiri",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-02-02",
+   "trip": "home",
+   "place": "Salem",
+   "summary": "Pack, last day with family",
+   "steps": [],
+   "note": ""
+  },
+  {
+   "date": "2027-02-03",
+   "trip": "travel",
+   "place": "Salem → Chennai",
+   "summary": "Intercity 8:45 AM, Chennai 1:45 PM",
+   "steps": [
+    {
+     "time": "8:15 AM",
+     "text": "Leave for Salem Junction"
+    },
+    {
+     "time": "8:45 AM",
+     "text": "Salem → Chennai Central",
+     "ref": "12680",
+     "alt": "Vande Bharat 20644 does not run on Wednesdays. If you go Tue Feb 2 instead, it leaves 8:05 AM, arrives 11:50 AM",
+     "booking": true
+    },
+    {
+     "time": "1:45 PM",
+     "text": "Arrive Chennai, hotel for the night"
+    }
+   ],
+   "note": ""
+  },
+  {
+   "date": "2027-02-04",
+   "trip": "flight",
+   "place": "Fly home",
+   "summary": "Chennai → Dubai 5:25 PM, then EK 201",
+   "steps": [
+    {
+     "time": "2:00 PM",
+     "text": "Leave for Chennai airport, 3 hours before an international flight"
+    },
+    {
+     "time": "5:25 PM",
+     "text": "Chennai → Dubai",
+     "ref": "Emirates"
+    },
+    {
+     "time": "Overnight",
+     "text": "Connect in Dubai",
+     "ref": "EK 201"
+    },
+    {
+     "time": "2:05 PM",
+     "text": "Fri Feb 5: land in New York"
+    }
+   ],
+   "note": "Flight times are copied from the original calendar. Check which time zone they are in."
+  },
+  {
+   "date": "2027-02-05",
+   "trip": "flight",
+   "place": "New York",
+   "summary": "Land 2:05 PM",
+   "steps": [],
+   "note": ""
+  }
+ ],
+ "tickets": [
+  {
+   "id": "t22639",
+   "kind": "train",
+   "trip": "kerala",
+   "date": "2027-01-05",
+   "number": "22639",
+   "name": "Alleppey Express",
+   "from": "Chennai Central (MAS)",
+   "to": "Alappuzha (ALLP)",
+   "dep": "20:55",
+   "arr": "10:40 +1",
+   "class": "3A",
+   "cost": 1060,
+   "costType": "perPerson",
+   "costConfirmed": true,
+   "costNote": "ixigo fare for the full route",
+   "status": "todo",
+   "pnr": "",
+   "note": "",
+   "links": [
+    {
+     "label": "Book on IRCTC",
+     "url": "https://www.irctc.co.in/nget/train-search"
+    },
+    {
+     "label": "Timetable",
+     "url": "https://www.railmitra.com/train-schedule/22639"
+    },
+    {
+     "label": "Fares and seats",
+     "url": "https://www.ixigo.com/trains/22639"
+    }
+   ],
+   "alt": "Sleeper ₹385, 2A ₹1,530"
+  },
+  {
+   "id": "t16346",
+   "kind": "train",
+   "trip": "kerala",
+   "date": "2027-01-07",
+   "number": "16346",
+   "name": "Netravati Express",
+   "from": "Alappuzha (ALLP)",
+   "to": "Thrissur (TCR)",
+   "dep": "11:55",
+   "arr": "14:30",
+   "class": "SL",
+   "cost": 175,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "Estimate",
+   "status": "todo",
+   "pnr": "",
+   "note": "",
+   "links": [
+    {
+     "label": "Book on IRCTC",
+     "url": "https://www.irctc.co.in/nget/train-search"
+    },
+    {
+     "label": "Timetable",
+     "url": "https://www.railmitra.com/train-schedule/16346"
+    },
+    {
+     "label": "Fares and seats",
+     "url": "https://www.ixigo.com/trains/16346"
+    }
+   ],
+   "alt": "3A about ₹505"
+  },
+  {
+   "id": "t26652a",
+   "kind": "train",
+   "trip": "kerala",
+   "date": "2027-01-08",
+   "number": "26652",
+   "name": "Ernakulam–Bengaluru Vande Bharat",
+   "from": "Thrissur (TCR)",
+   "to": "Salem (SA)",
+   "dep": "15:20",
+   "arr": "19:22",
+   "class": "CC",
+   "cost": 650,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "Estimate, food optional",
+   "status": "todo",
+   "pnr": "",
+   "note": "",
+   "links": [
+    {
+     "label": "Book on IRCTC",
+     "url": "https://www.irctc.co.in/nget/train-search"
+    },
+    {
+     "label": "Timetable",
+     "url": "https://www.railmitra.com/train-schedule/26652"
+    },
+    {
+     "label": "Fares and seats",
+     "url": "https://www.ixigo.com/trains/26652"
+    }
+   ],
+   "alt": "Executive chair about ₹1,400"
+  },
+  {
+   "id": "t16788",
+   "kind": "train",
+   "trip": "trichy",
+   "date": "2027-01-11",
+   "number": "16788",
+   "name": "Katra–Tirunelveli Express",
+   "from": "Salem (SA)",
+   "to": "Tiruchchirappalli (TPJ)",
+   "dep": "08:10",
+   "arr": "12:30",
+   "class": "SL",
+   "cost": 150,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "Estimate",
+   "status": "todo",
+   "pnr": "",
+   "note": "Starts in Katra days earlier, so its booking window opens earlier. Running days differ between sites. Check on IRCTC.",
+   "links": [
+    {
+     "label": "Book on IRCTC",
+     "url": "https://www.irctc.co.in/nget/train-search"
+    },
+    {
+     "label": "Timetable",
+     "url": "https://www.railmitra.com/train-schedule/16788"
+    },
+    {
+     "label": "Fares and seats",
+     "url": "https://www.ixigo.com/trains/16788"
+    }
+   ],
+   "alt": "Backup: Vande Bharat 20672, 4:35 PM",
+   "originDate": "2027-01-09"
+  },
+  {
+   "id": "t22716",
+   "kind": "train",
+   "trip": "trichy",
+   "date": "2027-01-12",
+   "number": "22716",
+   "name": "Madurai–Kacheguda Express",
+   "from": "Tiruchchirappalli (TPJ)",
+   "to": "Salem (SA)",
+   "dep": "15:20",
+   "arr": "19:35",
+   "class": "SL",
+   "cost": 175,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "Estimate",
+   "status": "todo",
+   "pnr": "",
+   "note": "Some sites list Sundays only. Check on IRCTC.",
+   "links": [
+    {
+     "label": "Book on IRCTC",
+     "url": "https://www.irctc.co.in/nget/train-search"
+    },
+    {
+     "label": "Timetable",
+     "url": "https://www.railmitra.com/train-schedule/22716"
+    },
+    {
+     "label": "Fares and seats",
+     "url": "https://www.ixigo.com/trains/22716"
+    }
+   ],
+   "alt": "Backup: 16231 at 8:30 PM"
+  },
+  {
+   "id": "t16235",
+   "kind": "train",
+   "trip": "temples",
+   "date": "2027-01-18",
+   "number": "16235",
+   "name": "Tuticorin–Mysuru Express",
+   "from": "Salem (SA)",
+   "to": "Mysuru (MYS)",
+   "dep": "01:10",
+   "arr": "09:30",
+   "class": "3A",
+   "cost": 735,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "Estimate",
+   "status": "todo",
+   "pnr": "",
+   "note": "Leaves 1:10 AM on Jan 18, so you board late on the night of Jan 17. Book it for Jan 18.",
+   "links": [
+    {
+     "label": "Book on IRCTC",
+     "url": "https://www.irctc.co.in/nget/train-search"
+    },
+    {
+     "label": "Timetable",
+     "url": "https://www.railmitra.com/train-schedule/16235"
+    },
+    {
+     "label": "Fares and seats",
+     "url": "https://www.ixigo.com/trains/16235"
+    }
+   ],
+   "alt": "Sleeper about ₹280",
+   "originDate": "2027-01-17"
+  },
+  {
+   "id": "t16219",
+   "kind": "train",
+   "trip": "temples",
+   "date": "2027-01-18",
+   "number": "16219",
+   "name": "Chamarajanagar–Tirupati Express",
+   "from": "Mysuru (MYS)",
+   "to": "Tirupati (TPTY)",
+   "dep": "17:15",
+   "arr": "04:05 +1",
+   "class": "3A",
+   "cost": 845,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "ixigo fare for the full route, yours is slightly less",
+   "status": "todo",
+   "pnr": "",
+   "note": "",
+   "links": [
+    {
+     "label": "Book on IRCTC",
+     "url": "https://www.irctc.co.in/nget/train-search"
+    },
+    {
+     "label": "Timetable",
+     "url": "https://www.railmitra.com/train-schedule/16219"
+    },
+    {
+     "label": "Fares and seats",
+     "url": "https://www.ixigo.com/trains/16219"
+    }
+   ],
+   "alt": "Sleeper ₹310, 2A ₹1,210"
+  },
+  {
+   "id": "t12793",
+   "kind": "train",
+   "trip": "temples",
+   "date": "2027-01-20",
+   "number": "12793",
+   "name": "Rayalaseema Express",
+   "from": "Tirupati (TPTY)",
+   "to": "Mantralayam Road (MALM)",
+   "dep": "17:25",
+   "arr": "23:43",
+   "class": "3A",
+   "cost": 830,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "Estimate",
+   "status": "todo",
+   "pnr": "",
+   "note": "",
+   "links": [
+    {
+     "label": "Book on IRCTC",
+     "url": "https://www.irctc.co.in/nget/train-search"
+    },
+    {
+     "label": "Timetable",
+     "url": "https://www.railmitra.com/train-schedule/12793"
+    },
+    {
+     "label": "Fares and seats",
+     "url": "https://www.ixigo.com/trains/12793"
+    }
+   ],
+   "alt": "Sleeper about ₹315"
+  },
+  {
+   "id": "t11013",
+   "kind": "train",
+   "trip": "temples",
+   "date": "2027-01-21",
+   "number": "11013",
+   "name": "LTT–Coimbatore Express",
+   "from": "Mantralayam Road (MALM)",
+   "to": "Salem (SA)",
+   "dep": "11:20",
+   "arr": "03:25 +1",
+   "class": "3A",
+   "cost": 1050,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "Estimate",
+   "status": "todo",
+   "pnr": "",
+   "note": "Starts in Mumbai the day before.",
+   "links": [
+    {
+     "label": "Book on IRCTC",
+     "url": "https://www.irctc.co.in/nget/train-search"
+    },
+    {
+     "label": "Timetable",
+     "url": "https://www.railmitra.com/train-schedule/11013"
+    },
+    {
+     "label": "Fares and seats",
+     "url": "https://www.ixigo.com/trains/11013"
+    }
+   ],
+   "alt": "Sleeper about ₹400",
+   "originDate": "2027-01-20"
+  },
+  {
+   "id": "t26652b",
+   "kind": "train",
+   "trip": "rajasthan",
+   "date": "2027-01-23",
+   "number": "26652",
+   "name": "Ernakulam–Bengaluru Vande Bharat",
+   "from": "Salem (SA)",
+   "to": "KSR Bengaluru (SBC)",
+   "dep": "19:25",
+   "arr": "23:00",
+   "class": "CC",
+   "cost": 500,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "Estimate, food optional",
+   "status": "todo",
+   "pnr": "",
+   "note": "",
+   "links": [
+    {
+     "label": "Book on IRCTC",
+     "url": "https://www.irctc.co.in/nget/train-search"
+    },
+    {
+     "label": "Timetable",
+     "url": "https://www.railmitra.com/train-schedule/26652"
+    },
+    {
+     "label": "Fares and seats",
+     "url": "https://www.ixigo.com/trains/26652"
+    }
+   ]
+  },
+  {
+   "id": "tQP1362",
+   "kind": "flight",
+   "trip": "rajasthan",
+   "date": "2027-01-24",
+   "number": "QP 1362",
+   "name": "Akasa Air",
+   "from": "Bengaluru (BLR)",
+   "to": "Jaipur (JAI)",
+   "dep": "08:55",
+   "arr": "11:40",
+   "class": "Economy",
+   "cost": 7500,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "Typical ₹6,000 to ₹9,000",
+   "status": "todo",
+   "pnr": "",
+   "note": "For 10 or more people, ask the airline's group desk for one fare.",
+   "links": [
+    {
+     "label": "Book on Akasa Air",
+     "url": "https://www.akasaair.com/"
+    },
+    {
+     "label": "Route schedule",
+     "url": "https://www.flightsfrom.com/BLR-JAI"
+    }
+   ],
+   "opensAt": "now"
+  },
+  {
+   "id": "t6E7181",
+   "kind": "flight",
+   "trip": "rajasthan",
+   "date": "2027-01-25",
+   "number": "6E 7181",
+   "name": "IndiGo",
+   "from": "Jaipur (JAI)",
+   "to": "Udaipur (UDR)",
+   "dep": "16:55",
+   "arr": "18:10",
+   "class": "Economy",
+   "cost": 4000,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "Typical ₹3,000 to ₹5,000",
+   "status": "todo",
+   "pnr": "",
+   "note": "Small ATR plane with 78 seats. Book this flight first.",
+   "links": [
+    {
+     "label": "Book on IndiGo",
+     "url": "https://www.goindigo.in/"
+    },
+    {
+     "label": "Route schedule",
+     "url": "https://www.flightsfrom.com/JAI-UDR"
+    }
+   ],
+   "opensAt": "now"
+  },
+  {
+   "id": "t6E412",
+   "kind": "flight",
+   "trip": "rajasthan",
+   "date": "2027-01-27",
+   "number": "6E 412",
+   "name": "IndiGo",
+   "from": "Udaipur (UDR)",
+   "to": "Bengaluru (BLR)",
+   "dep": "09:30",
+   "arr": "11:55",
+   "class": "Economy",
+   "cost": 7500,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "Typical ₹6,000 to ₹9,000",
+   "status": "todo",
+   "pnr": "",
+   "note": "",
+   "links": [
+    {
+     "label": "Book on IndiGo",
+     "url": "https://www.goindigo.in/"
+    },
+    {
+     "label": "Route schedule",
+     "url": "https://www.flightsfrom.com/UDR-BLR"
+    }
+   ],
+   "opensAt": "now"
+  },
+  {
+   "id": "t20641",
+   "kind": "train",
+   "trip": "rajasthan",
+   "date": "2027-01-27",
+   "number": "20641",
+   "name": "Bengaluru–Coimbatore Vande Bharat",
+   "from": "Bengaluru Cantonment (BNC)",
+   "to": "Salem (SA)",
+   "dep": "14:20",
+   "arr": "17:52",
+   "class": "CC",
+   "cost": 450,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "Estimate, food optional",
+   "status": "todo",
+   "pnr": "",
+   "note": "Does not run on Thursdays. Jan 27 is a Wednesday, so it's fine.",
+   "links": [
+    {
+     "label": "Book on IRCTC",
+     "url": "https://www.irctc.co.in/nget/train-search"
+    },
+    {
+     "label": "Timetable",
+     "url": "https://www.railmitra.com/train-schedule/20641"
+    },
+    {
+     "label": "Fares and seats",
+     "url": "https://www.ixigo.com/trains/20641"
+    }
+   ],
+   "alt": "Backup: 22665 Uday Express, 2:15 PM"
+  },
+  {
+   "id": "t12680",
+   "kind": "train",
+   "trip": "travel",
+   "date": "2027-02-03",
+   "number": "12680",
+   "name": "Coimbatore–Chennai Intercity",
+   "from": "Salem (SA)",
+   "to": "Chennai Central (MAS)",
+   "dep": "08:45",
+   "arr": "13:45",
+   "class": "CC",
+   "cost": 520,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "Estimate",
+   "status": "todo",
+   "pnr": "",
+   "note": "Vande Bharat 20644 does not run on Wednesdays, so this daily Intercity replaces it.",
+   "links": [
+    {
+     "label": "Book on IRCTC",
+     "url": "https://www.irctc.co.in/nget/train-search"
+    },
+    {
+     "label": "Timetable",
+     "url": "https://www.railmitra.com/train-schedule/12680"
+    },
+    {
+     "label": "Fares and seats",
+     "url": "https://www.ixigo.com/trains/12680"
+    }
+   ],
+   "alt": "Second sitting about ₹155",
+   "originDate": "2027-02-03"
+  },
+  {
+   "id": "tttd",
+   "kind": "darshan",
+   "trip": "temples",
+   "date": "2027-01-19",
+   "number": "TTD",
+   "name": "₹300 special entry darshan",
+   "from": "Tirumala",
+   "to": "",
+   "dep": "10:00",
+   "arr": "",
+   "class": "Darshan",
+   "cost": 300,
+   "costType": "perPerson",
+   "costConfirmed": true,
+   "costNote": "Fixed TTD price",
+   "status": "todo",
+   "pnr": "",
+   "note": "January quota opened Oct 24 at 10 AM IST. Elders 65+ have a separate quota (opened Oct 23, 3 PM IST). Carry the same ID used to book. Traditional dress required.",
+   "links": [
+    {
+     "label": "TTD official booking",
+     "url": "https://ttdevasthanams.ap.gov.in/"
+    }
+   ],
+   "opensAt": "2026-10-24T10:00:00+05:30"
+  },
+  {
+   "id": "sttdroom",
+   "kind": "stay",
+   "trip": "temples",
+   "date": "2027-01-19",
+   "number": "",
+   "name": "Tirumala rooms, 1 night",
+   "from": "Tirumala",
+   "to": "",
+   "dep": "",
+   "arr": "",
+   "class": "5 rooms",
+   "cost": 5000,
+   "costType": "total",
+   "costConfirmed": false,
+   "costNote": "Estimate, TTD rooms are cheap",
+   "status": "todo",
+   "pnr": "",
+   "note": "TTD released January rooms Oct 24 at 3 PM IST.",
+   "links": [
+    {
+     "label": "TTD official booking",
+     "url": "https://ttdevasthanams.ap.gov.in/"
+    }
+   ],
+   "opensAt": "2026-10-24T15:00:00+05:30"
+  },
+  {
+   "id": "shouseboat",
+   "kind": "stay",
+   "trip": "kerala",
+   "date": "2027-01-06",
+   "number": "",
+   "name": "Houseboats, 1 night",
+   "from": "Alappuzha",
+   "to": "",
+   "dep": "12:00",
+   "arr": "09:00 +1",
+   "class": "2 boats",
+   "cost": 40000,
+   "costType": "total",
+   "costConfirmed": false,
+   "costNote": "₹15,000 to ₹25,000 per boat in peak season",
+   "status": "todo",
+   "pnr": "",
+   "note": "December to January is peak season. Book early, confirm meals and AC hours.",
+   "links": [
+    {
+     "label": "Price guide",
+     "url": "https://boatsnbeds.com/alleppey-houseboats/alleppey-houseboat-booking/"
+    }
+   ],
+   "opensAt": "now"
+  },
+  {
+   "id": "sguruvayur",
+   "kind": "stay",
+   "trip": "kerala",
+   "date": "2027-01-07",
+   "number": "",
+   "name": "Guruvayur hotel, 1 night",
+   "from": "Guruvayur",
+   "to": "",
+   "dep": "",
+   "arr": "",
+   "class": "5 rooms",
+   "cost": 12500,
+   "costType": "total",
+   "costConfirmed": false,
+   "costNote": "Estimate",
+   "status": "todo",
+   "pnr": "",
+   "note": "",
+   "links": [],
+   "opensAt": "now"
+  },
+  {
+   "id": "strichy",
+   "kind": "stay",
+   "trip": "trichy",
+   "date": "2027-01-11",
+   "number": "",
+   "name": "Trichy hotel, 1 night",
+   "from": "Trichy",
+   "to": "",
+   "dep": "",
+   "arr": "",
+   "class": "5 rooms",
+   "cost": 10000,
+   "costType": "total",
+   "costConfirmed": false,
+   "costNote": "Estimate",
+   "status": "todo",
+   "pnr": "",
+   "note": "",
+   "links": [],
+   "opensAt": "now"
+  },
+  {
+   "id": "smantralayam",
+   "kind": "stay",
+   "trip": "temples",
+   "date": "2027-01-20",
+   "number": "",
+   "name": "Mantralayam rooms, 1 night",
+   "from": "Mantralayam",
+   "to": "",
+   "dep": "",
+   "arr": "",
+   "class": "5 rooms",
+   "cost": 5000,
+   "costType": "total",
+   "costConfirmed": false,
+   "costNote": "Estimate",
+   "status": "todo",
+   "pnr": "",
+   "note": "Reception: 08512-279659. Arriving near midnight, so tell them your arrival time.",
+   "links": [
+    {
+     "label": "Sri Raghavendra Swamy Mutt",
+     "url": "https://srsmatha.org/"
+    }
+   ],
+   "opensAt": "now"
+  },
+  {
+   "id": "sblr",
+   "kind": "stay",
+   "trip": "rajasthan",
+   "date": "2027-01-23",
+   "number": "",
+   "name": "Bengaluru hotel, 1 night",
+   "from": "Bengaluru",
+   "to": "",
+   "dep": "",
+   "arr": "",
+   "class": "5 rooms",
+   "cost": 12500,
+   "costType": "total",
+   "costConfirmed": false,
+   "costNote": "Estimate",
+   "status": "todo",
+   "pnr": "",
+   "note": "Pick one toward the airport for the 8:55 AM flight.",
+   "links": [],
+   "opensAt": "now"
+  },
+  {
+   "id": "sjaipur",
+   "kind": "stay",
+   "trip": "rajasthan",
+   "date": "2027-01-24",
+   "number": "",
+   "name": "Jaipur hotel, 1 night",
+   "from": "Jaipur",
+   "to": "",
+   "dep": "",
+   "arr": "",
+   "class": "5 family rooms",
+   "cost": 17500,
+   "costType": "total",
+   "costConfirmed": false,
+   "costNote": "Estimate",
+   "status": "todo",
+   "pnr": "",
+   "note": "Ideas: Hotel Diggi Palace (budget, big gardens) or Alsisar Haveli (courtyard pool).",
+   "links": [
+    {
+     "label": "Family hotel guide",
+     "url": "https://hotelierschoice.com/es/guide/jaipur/families/"
+    }
+   ],
+   "opensAt": "now"
+  },
+  {
+   "id": "sudaipur",
+   "kind": "stay",
+   "trip": "rajasthan",
+   "date": "2027-01-25",
+   "number": "",
+   "name": "Udaipur haveli, 2 nights",
+   "from": "Udaipur",
+   "to": "",
+   "dep": "",
+   "arr": "",
+   "class": "5 rooms",
+   "cost": 65000,
+   "costType": "total",
+   "costConfirmed": false,
+   "costNote": "Estimate, from about $78 a room a night",
+   "status": "todo",
+   "pnr": "",
+   "note": "Idea: Kankarwa Haveli at Lal Ghat, 16 rooms on Lake Pichola. Stairs only, ask for ground floor for elders.",
+   "links": [
+    {
+     "label": "Kankarwa Haveli",
+     "url": "https://thehotelguru.com/hotel/kankarwa-haveli-udaipur"
+    }
+   ],
+   "opensAt": "now"
+  },
+  {
+   "id": "schennai",
+   "kind": "stay",
+   "trip": "travel",
+   "date": "2027-02-03",
+   "number": "",
+   "name": "Chennai hotel, 1 night",
+   "from": "Chennai",
+   "to": "",
+   "dep": "",
+   "arr": "",
+   "class": "5 rooms",
+   "cost": 15000,
+   "costType": "total",
+   "costConfirmed": false,
+   "costNote": "Estimate",
+   "status": "todo",
+   "pnr": "",
+   "note": "",
+   "links": [],
+   "opensAt": "now"
+  },
+  {
+   "id": "achokhi",
+   "kind": "activity",
+   "trip": "rajasthan",
+   "date": "2027-01-24",
+   "number": "",
+   "name": "Chokhi Dhani village night",
+   "from": "Jaipur",
+   "to": "",
+   "dep": "18:30",
+   "arr": "",
+   "class": "Entry and dinner",
+   "cost": 1800,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "₹700 entry plus ₹1,100 dinner, kids less",
+   "status": "todo",
+   "pnr": "",
+   "note": "",
+   "links": [
+    {
+     "label": "Prices",
+     "url": "https://www.veenaworld.com/blog/jaipur-chokhi-dhani-opening-time-ticket-price-how-to-visit"
+    }
+   ],
+   "opensAt": "now"
+  },
+  {
+   "id": "aboat",
+   "kind": "activity",
+   "trip": "rajasthan",
+   "date": "2027-01-26",
+   "number": "",
+   "name": "Lake Pichola sunset boat",
+   "from": "Udaipur",
+   "to": "",
+   "dep": "16:45",
+   "arr": "",
+   "class": "Sunset ride",
+   "cost": 1200,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "₹800 to ₹1,000 boat plus about ₹300 City Palace entry",
+   "status": "todo",
+   "pnr": "",
+   "note": "",
+   "links": [
+    {
+     "label": "Boat guide",
+     "url": "https://trekgo.in/blog/udaipur-boat-ride-pichola-guide"
+    }
+   ],
+   "opensAt": "now"
+  },
+  {
+   "id": "adharohar",
+   "kind": "activity",
+   "trip": "rajasthan",
+   "date": "2027-01-26",
+   "number": "",
+   "name": "Dharohar folk dance show",
+   "from": "Udaipur",
+   "to": "",
+   "dep": "19:00",
+   "arr": "",
+   "class": "Seat",
+   "cost": 125,
+   "costType": "perPerson",
+   "costConfirmed": false,
+   "costNote": "Kids ₹75",
+   "status": "todo",
+   "pnr": "",
+   "note": "",
+   "links": [
+    {
+     "label": "Show details",
+     "url": "https://www.topindianholidays.com/blog/bagore-ki-haveli-udaipur"
+    }
+   ],
+   "opensAt": "now"
+  },
+  {
+   "id": "avan",
+   "kind": "activity",
+   "trip": "rajasthan",
+   "date": "2027-01-24",
+   "number": "",
+   "name": "Van with driver, Jaipur and Udaipur",
+   "from": "Jaipur, Udaipur",
+   "to": "",
+   "dep": "",
+   "arr": "",
+   "class": "17 seater",
+   "cost": 20000,
+   "costType": "total",
+   "costConfirmed": false,
+   "costNote": "Estimate for 3 days of local use",
+   "status": "todo",
+   "pnr": "",
+   "note": "",
+   "links": [],
+   "opensAt": "now"
+  }
+ ],
+ "extras": [
+  {
+   "id": "x1",
+   "trip": "kerala",
+   "label": "Food and local buses",
+   "cost": 2000,
+   "costType": "perPerson"
+  },
+  {
+   "id": "x2",
+   "trip": "trichy",
+   "label": "Food and autos",
+   "cost": 700,
+   "costType": "perPerson"
+  },
+  {
+   "id": "x3",
+   "trip": "temples",
+   "label": "Food, ghat buses, Mantralayam vehicles",
+   "cost": 2200,
+   "costType": "perPerson"
+  },
+  {
+   "id": "x4",
+   "trip": "rajasthan",
+   "label": "Food, airport cabs, entry tickets",
+   "cost": 4000,
+   "costType": "perPerson"
+  },
+  {
+   "id": "x5",
+   "trip": "travel",
+   "label": "Food and Chennai cabs",
+   "cost": 600,
+   "costType": "perPerson"
+  }
+ ],
+ "todos": [
+  {
+   "id": "d1",
+   "text": "Check TTD ₹300 darshan for Tue Jan 19 (opened Oct 24, 10 AM IST)",
+   "owner": "Surya",
+   "due": "2026-10-24",
+   "done": false,
+   "link": "https://ttdevasthanams.ap.gov.in/"
+  },
+  {
+   "id": "d2",
+   "text": "Book Tirumala rooms for Jan 19 (opened Oct 24, 3 PM IST)",
+   "owner": "Surya",
+   "due": "2026-10-24",
+   "done": false,
+   "link": "https://ttdevasthanams.ap.gov.in/"
+  },
+  {
+   "id": "d3",
+   "text": "If ₹300 darshan is gone, check the senior citizen quota for elders 65+",
+   "owner": "Surya",
+   "due": "2026-10-25",
+   "done": false
+  },
+  {
+   "id": "d4",
+   "text": "Collect full name, age, gender and ID for all 15 travellers",
+   "owner": "Mom",
+   "due": "2026-10-31",
+   "done": false
+  },
+  {
+   "id": "d5",
+   "text": "Book the 3 Rajasthan flights through the airline group desks",
+   "owner": "Surya",
+   "due": "2026-10-31",
+   "done": false
+  },
+  {
+   "id": "d6",
+   "text": "Book Jaipur and Udaipur hotels",
+   "owner": "Surya",
+   "due": "2026-10-31",
+   "done": false
+  },
+  {
+   "id": "d7",
+   "text": "Book 2 houseboats in Alappuzha for Jan 6",
+   "owner": "Brother",
+   "due": "2026-11-01",
+   "done": false
+  },
+  {
+   "id": "d8",
+   "text": "Set up 3 IRCTC accounts, link Aadhaar, save all 15 passengers in each master list",
+   "owner": "Brother",
+   "due": "2026-11-01",
+   "done": false,
+   "link": "https://www.irctc.co.in/"
+  },
+  {
+   "id": "d9",
+   "text": "Split the 15 into 3 groups of 5 so each IRCTC account books one PNR",
+   "owner": "Surya",
+   "due": "2026-11-04",
+   "done": false
+  },
+  {
+   "id": "d10",
+   "text": "Add the booking reminders to your phone calendar (Tickets tab, Add reminders)",
+   "owner": "Everyone",
+   "due": "2026-11-04",
+   "done": false
+  },
+  {
+   "id": "d11",
+   "text": "Book Mantralayam rooms for Jan 20 and tell them you arrive near midnight",
+   "owner": "Brother",
+   "due": "2026-11-21",
+   "done": false,
+   "link": "https://srsmatha.org/"
+  },
+  {
+   "id": "d12",
+   "text": "Book Guruvayur, Trichy, Bengaluru and Chennai hotels",
+   "owner": "Brother",
+   "due": "2026-11-30",
+   "done": false
+  },
+  {
+   "id": "d13",
+   "text": "Ask Aarav Villa about keeping bags until evening on Jan 5",
+   "owner": "Surya",
+   "due": "2026-12-15",
+   "done": false
+  },
+  {
+   "id": "d14",
+   "text": "Book a 17-seater van with driver for Jaipur and Udaipur",
+   "owner": "Surya",
+   "due": "2026-12-31",
+   "done": false
+  },
+  {
+   "id": "d15",
+   "text": "Install IRCTC Rail Connect and Where is my Train on everyone's phones",
+   "owner": "Everyone",
+   "due": "2026-12-20",
+   "done": false
+  },
+  {
+   "id": "d16",
+   "text": "Get an Indian SIM or eSIM for Surya",
+   "owner": "Surya",
+   "due": "2026-12-28",
+   "done": false
+  },
+  {
+   "id": "d17",
+   "text": "Save PDFs of every ticket and darshan pass in one shared folder",
+   "owner": "Surya",
+   "due": "2026-12-28",
+   "done": false
+  },
+  {
+   "id": "d18",
+   "text": "Pack traditional dress for Tirumala darshan",
+   "owner": "Everyone",
+   "due": "2027-01-16",
+   "done": false
+  },
+  {
+   "id": "d19",
+   "text": "Pack jackets and warm layers for Rajasthan nights",
+   "owner": "Everyone",
+   "due": "2027-01-22",
+   "done": false
+  },
+  {
+   "id": "d20",
+   "text": "Book Chokhi Dhani and the Dharohar show",
+   "owner": "Surya",
+   "due": "2027-01-15",
+   "done": false
+  },
+  {
+   "id": "d21",
+   "text": "Check PNR status the day before every train. Waitlisted tickets can't board reserved coaches",
+   "owner": "Brother",
+   "due": "2027-01-04",
+   "done": false
+  }
+ ],
+ "places": {
+  "nyc": {
+   "name": "New York",
+   "lat": 40.64,
+   "lon": -73.78
+  },
+  "dxb": {
+   "name": "Dubai",
+   "lat": 25.25,
+   "lon": 55.36
+  },
+  "maa": {
+   "name": "Chennai",
+   "lat": 13.08,
+   "lon": 80.27
+  },
+  "allp": {
+   "name": "Alappuzha",
+   "lat": 9.49,
+   "lon": 76.33
+  },
+  "tcr": {
+   "name": "Thrissur",
+   "lat": 10.52,
+   "lon": 76.21
+  },
+  "guv": {
+   "name": "Guruvayur",
+   "lat": 10.59,
+   "lon": 76.04
+  },
+  "sa": {
+   "name": "Salem",
+   "lat": 11.66,
+   "lon": 78.15
+  },
+  "tpj": {
+   "name": "Trichy",
+   "lat": 10.79,
+   "lon": 78.7
+  },
+  "mys": {
+   "name": "Mysuru",
+   "lat": 12.3,
+   "lon": 76.64
+  },
+  "tpty": {
+   "name": "Tirupati",
+   "lat": 13.63,
+   "lon": 79.42
+  },
+  "malm": {
+   "name": "Mantralayam",
+   "lat": 15.94,
+   "lon": 77.42
+  },
+  "blr": {
+   "name": "Bengaluru",
+   "lat": 12.97,
+   "lon": 77.59
+  },
+  "jai": {
+   "name": "Jaipur",
+   "lat": 26.91,
+   "lon": 75.79
+  },
+  "udr": {
+   "name": "Udaipur",
+   "lat": 24.58,
+   "lon": 73.71
+  }
+ },
+ "legs": [
+  {
+   "date": "2026-12-30",
+   "from": "nyc",
+   "to": "dxb",
+   "mode": "flight",
+   "ref": "Emirates",
+   "label": "Fly out of New York"
+  },
+  {
+   "date": "2026-12-31",
+   "from": "dxb",
+   "to": "maa",
+   "mode": "flight",
+   "ref": "Emirates",
+   "label": "Land in Chennai"
+  },
+  {
+   "date": "2027-01-05",
+   "from": "maa",
+   "to": "allp",
+   "mode": "train",
+   "ref": "22639",
+   "label": "Overnight to the backwaters"
+  },
+  {
+   "date": "2027-01-07",
+   "from": "allp",
+   "to": "tcr",
+   "mode": "train",
+   "ref": "16346",
+   "label": "Houseboat to Thrissur"
+  },
+  {
+   "date": "2027-01-07",
+   "from": "tcr",
+   "to": "guv",
+   "mode": "bus",
+   "ref": "KSRTC",
+   "label": "Bus to Guruvayur"
+  },
+  {
+   "date": "2027-01-08",
+   "from": "guv",
+   "to": "tcr",
+   "mode": "bus",
+   "ref": "KSRTC",
+   "label": "Back to Thrissur"
+  },
+  {
+   "date": "2027-01-08",
+   "from": "tcr",
+   "to": "sa",
+   "mode": "train",
+   "ref": "26652",
+   "label": "Vande Bharat home to Salem"
+  },
+  {
+   "date": "2027-01-11",
+   "from": "sa",
+   "to": "tpj",
+   "mode": "train",
+   "ref": "16788",
+   "label": "Day trip to Trichy"
+  },
+  {
+   "date": "2027-01-12",
+   "from": "tpj",
+   "to": "sa",
+   "mode": "train",
+   "ref": "22716",
+   "label": "Back to Salem"
+  },
+  {
+   "date": "2027-01-18",
+   "from": "sa",
+   "to": "mys",
+   "mode": "train",
+   "ref": "16235",
+   "label": "Night train to Mysuru"
+  },
+  {
+   "date": "2027-01-18",
+   "from": "mys",
+   "to": "tpty",
+   "mode": "train",
+   "ref": "16219",
+   "label": "Overnight to Tirupati"
+  },
+  {
+   "date": "2027-01-20",
+   "from": "tpty",
+   "to": "malm",
+   "mode": "train",
+   "ref": "12793",
+   "label": "Up to Mantralayam"
+  },
+  {
+   "date": "2027-01-21",
+   "from": "malm",
+   "to": "sa",
+   "mode": "train",
+   "ref": "11013",
+   "label": "Long ride home to Salem"
+  },
+  {
+   "date": "2027-01-23",
+   "from": "sa",
+   "to": "blr",
+   "mode": "train",
+   "ref": "26652",
+   "label": "Vande Bharat to Bengaluru"
+  },
+  {
+   "date": "2027-01-24",
+   "from": "blr",
+   "to": "jai",
+   "mode": "flight",
+   "ref": "QP 1362",
+   "label": "Fly to the Pink City"
+  },
+  {
+   "date": "2027-01-25",
+   "from": "jai",
+   "to": "udr",
+   "mode": "flight",
+   "ref": "6E 7181",
+   "label": "Hop to the City of Lakes"
+  },
+  {
+   "date": "2027-01-27",
+   "from": "udr",
+   "to": "blr",
+   "mode": "flight",
+   "ref": "6E 412",
+   "label": "Fly back south"
+  },
+  {
+   "date": "2027-01-27",
+   "from": "blr",
+   "to": "sa",
+   "mode": "train",
+   "ref": "20641",
+   "label": "Vande Bharat to Salem"
+  },
+  {
+   "date": "2027-02-03",
+   "from": "sa",
+   "to": "maa",
+   "mode": "train",
+   "ref": "12680",
+   "label": "Intercity to Chennai"
+  },
+  {
+   "date": "2027-02-04",
+   "from": "maa",
+   "to": "dxb",
+   "mode": "flight",
+   "ref": "Emirates",
+   "label": "Leave India"
+  },
+  {
+   "date": "2027-02-04",
+   "from": "dxb",
+   "to": "nyc",
+   "mode": "flight",
+   "ref": "EK 201",
+   "label": "Home to New York"
+  }
+ ]
+}
