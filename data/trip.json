@@ -5,7 +5,7 @@
   "end": "2027-02-05",
   "defaultPeople": 15,
   "usdRate": 95,
-  "updated": "2026-10-25T15:41:39.540Z",
+  "updated": "2026-10-25T15:41:56.859Z",
   "updatedBy": "Surya",
   "rateMode": "live",
   "repo": "Surya0901/india-itinerary-2027",
@@ -1844,13 +1844,6 @@
    "owner": "Brother",
    "due": "2027-01-04",
    "done": false
-  },
-  {
-   "id": "d6c9abh",
-   "due": "2026-10-25",
-   "done": false,
-   "text": "try the trip planner chat",
-   "owner": "Surya"
   }
  ],
  "places": {
