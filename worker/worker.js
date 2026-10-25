@@ -2,7 +2,7 @@
 // Holds the Gemini key and a GitHub key so anyone using the trip site can chat with the
 // planner and save changes, without keys of their own.
 //   GET  /plan  the latest plan, straight from GitHub (fresher than the GitHub Pages copy)
-//   POST /ask   forwards a planner chat request to Gemini
+//   POST /ask   forwards a planner chat request to Gemini (optionally with Google Search)
 //   POST /save  writes data/trip.json to the GitHub repo
 //   GET  /ping  says whether the secrets are set (never returns them)
 // Secrets (Cloudflare: Settings, Variables and Secrets): GEMINI_API_KEY, GITHUB_TOKEN
@@ -62,7 +62,9 @@ export default {
       let body;
       try { body = await req.json(); } catch (e) { return json({ error: "Bad request" }, 400); }
       const model = /^[\w.-]{3,60}$/.test(body.model || "") ? body.model : DEFAULT_MODEL;
-      const payload = JSON.stringify({ systemInstruction: body.systemInstruction, contents: body.contents, generationConfig: body.generationConfig });
+      // the only tool allowed is Google Search grounding, so the planner can look things up
+      const tools = Array.isArray(body.tools) && body.tools.length === 1 && body.tools[0] && typeof body.tools[0].google_search === "object" ? [{ google_search: {} }] : undefined;
+      const payload = JSON.stringify({ systemInstruction: body.systemInstruction, contents: body.contents, generationConfig: body.generationConfig, tools });
       if (payload.length > 600000) return json({ error: "That request is too large" }, 413);
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: "POST",

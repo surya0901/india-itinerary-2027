@@ -324,7 +324,7 @@
     if (!libsPromise) {
       libsPromise = (window.d3 ? Promise.resolve() : loadScript("assets/vendor/d3.min.js"))
         .then(() => (window.topojson ? null : loadScript("assets/vendor/topojson-client.min.js")))
-        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js?v=7")));
+        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js?v=8")));
       libsPromise.catch(() => { libsPromise = null; });
     }
     return libsPromise;
@@ -857,13 +857,14 @@
     openDialog("Planner settings", "Saved on this device only.",
       `${field("Your name", "gname", store.get("name") || "", "text", 'placeholder="So everyone knows who changed what"')}
        ${select("Model", "gmodel", c.model || GEMINI_MODELS[0][0], GEMINI_MODELS)}
-       <p class="hint">Gemini 3.8 Flash is the best balance. Switch to Flash-Lite if replies are slow.</p>`,
+       <p class="hint">Gemini 3.8 Flash is the best balance. Switch to Flash-Lite if replies are slow.</p>
+       <label class="check"><input type="checkbox" name="gweb" ${c.web !== false ? "checked" : ""}> Let the planner search the web for current info</label>`,
       `<button class="btn" type="button" data-dlg="clear">Clear chat history</button><div class="right"><button class="btn" type="submit" value="cancel" formnovalidate>Cancel</button><button class="btn btn-primary" type="button" data-dlg="save">Save</button></div>`);
     form.onclick = (e) => {
       const b = e.target.closest("[data-dlg]"); if (!b) return;
       if (b.dataset.dlg === "clear") { chatLog.length = 0; saveChat(); renderChat(); closeDialog(); toast("Chat cleared"); return; }
       if (fv("gname")) store.set("name", fv("gname"));
-      store.set("gemini", Object.assign({}, c, { model: fv("gmodel") }));
+      store.set("gemini", Object.assign({}, c, { model: fv("gmodel"), web: !!fv("gweb") }));
       const n = $("#chat-name"); if (n) n.value = store.get("name") || "";
       closeDialog(); toast("Settings saved");
       if (then) then();
@@ -1043,9 +1044,11 @@
   const AI_RULES = `You edit a shared family trip plan website and answer questions about it.
 The trip: Surya's family of about 15 people, India, Dec 31 2026 to Feb 5 2027. They travel mostly by Indian Railways trains and Vande Bharat, with home base in Salem, Tamil Nadu. Elders are travelling, so keep plans realistic.
 
-Answer ONLY with a JSON object: {"reply": string, "operations": array}.
+Answer ONLY with a JSON object: {"reply": string, "operations": array, "show": array}. No code fences and no text before or after the object.
 - reply: a short, friendly chat message in plain words. Up to five sentences, or a short list with one item per line starting with "- ". No em dashes. When you propose operations, describe them as a proposal ("Here's the change" or "I can move..."), because the person taps Apply before anything changes.
 - You are chatting, so it's fine to ask a follow-up question, suggest ideas, or explain trains, Vande Bharat, bookings, costs and the places on the trip.
+- You can use Google Search for current or outside facts: train schedules and running days, weather, temple timings, opening hours, prices, festival dates, travel news. Say briefly where the facts came from. Facts you found online can go into the reply; only put them into operations if the person asked for that change, and mention they should be double checked on IRCTC or the official site.
+- show: pull up items from the plan as cards in the chat, when someone asks to see, show or find something, or when a card would help. Up to 6 of: {"type":"day","date":"YYYY-MM-DD"}, {"type":"ticket","id":"<ticket id>"}, {"type":"todo","id":"<to-do id>"}. Use an empty array otherwise.
 - operations: the edits to make. Use an empty array when nothing should change (questions, or when the request is unclear).
 - Never invent train numbers, flight numbers, timings or prices. If the request needs facts you don't have, leave those fields empty, make the rest of the change, and say in reply what needs checking on IRCTC or the airline site.
 - If a request is ambiguous, ask one short question in reply and make no operations.
@@ -1118,12 +1121,21 @@ Formats:
     const sys = `${AI_RULES}\n\nToday is ${now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: IST })} in India.\nBooking windows worked out by the site (Indian Railways opens 60 days ahead at 8 AM IST; use these for any question about what to book and when):\n${windows}\n\nCurrent plan JSON:\n${JSON.stringify(data)}`;
     const contents = (history || []).map((m) => ({ role: m.role, parts: [{ text: m.text }] }));
     contents.push({ role: "user", parts: [{ text: `${store.get("name") || "A family member"} says: ${text}` }] });
-    const body = { systemInstruction: { parts: [{ text: sys }] }, contents, generationConfig: { responseMimeType: "application/json", temperature: 0.2 } };
+    const search = c.web !== false;
+    const makeBody = (withSearch) => withSearch
+      ? { systemInstruction: { parts: [{ text: sys }] }, contents, tools: [{ google_search: {} }], generationConfig: { temperature: 0.2 } }
+      : { systemInstruction: { parts: [{ text: sys }] }, contents, generationConfig: { responseMimeType: "application/json", temperature: 0.2 } };
+    const send = (b) => W()
+      ? fetch(W() + "/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.assign({ model }, b)) })
+      : fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": c.key }, body: JSON.stringify(b) });
     let r;
     try {
-      r = W()
-        ? await fetch(W() + "/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.assign({ model }, body)) })
-        : await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": c.key }, body: JSON.stringify(body) });
+      r = await send(makeBody(search));
+      // if search isn't available for this key or model, answer without it
+      if (search && !r.ok && r.status !== 429 && r.status !== 503) {
+        const peek = await r.clone().text().catch(() => "");
+        if (r.status === 400 || /search|tool|ground/i.test(peek)) r = await send(makeBody(false));
+      }
     }
     catch (e) { throw new Error("Couldn't reach Gemini. Check the internet connection and try again."); }
     if (!r.ok) {
@@ -1136,11 +1148,24 @@ Formats:
       throw new Error(`Gemini returned an error (${r.status}). ${msg.slice(0, 160)}`);
     }
     const j = await r.json();
-    const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
+    const cand = (j.candidates || [])[0] || {};
+    const parts = (cand.content || {}).parts || [];
     const out = parts.filter((p) => !p.thought && p.text).map((p) => p.text).join("").trim();
     if (!out) throw new Error("Gemini sent back an empty answer. Try saying it another way.");
-    try { return JSON.parse(out.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")); }
-    catch (e) { return { reply: out, operations: [] }; }
+    const res = parsePlannerJSON(out);
+    const gm = cand.groundingMetadata || {};
+    const seen = new Set();
+    res.sources = (gm.groundingChunks || []).map((g) => g.web).filter((w) => w && /^https?:\/\//.test(w.uri || "") && !seen.has(w.uri) && seen.add(w.uri)).slice(0, 5).map((w) => ({ title: String(w.title || w.uri).slice(0, 80), uri: w.uri }));
+    res.suggest = (gm.searchEntryPoint && gm.searchEntryPoint.renderedContent) || "";
+    return res;
+  }
+
+  function parsePlannerJSON(out) {
+    const t = out.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+    try { return JSON.parse(t); } catch (e) {}
+    const a = t.indexOf("{"), b = t.lastIndexOf("}");
+    if (a >= 0 && b > a) { try { const o = JSON.parse(t.slice(a, b + 1)); if (o && typeof o === "object" && ("reply" in o || "operations" in o)) return o; } catch (e) {} }
+    return { reply: out, operations: [] };
   }
 
   // apply edit operations to a plan object; returns readable change lines and problems
@@ -1238,7 +1263,7 @@ Formats:
   const undoSnapshots = {}; // message id -> plan before that change (this visit only)
   let chatBusy = false;
   const saveChat = () => { while (chatLog.length > 40) chatLog.shift(); store.set("chatlog", chatLog.map((m) => (m.changes ? Object.assign({}, m, { changes: Object.assign({}, m.changes, { ops: m.changes.state === "pending" ? m.changes.ops : [] }) }) : m))); };
-  const EXAMPLES = ["What do we need to book this week?", "Move Trichy to Jan 20 and 21", "We booked 22639, PNR 4521234567", "Add dinner at Saravana Bhavan on Jan 2 at 7 PM", "What's the cheapest way from Salem to Mysuru?", "Only 12 people are going to Rajasthan"];
+  const EXAMPLES = ["Show me the temple loop days", "What's the weather in Jaipur in late January?", "What do we need to book this week?", "Move Trichy to Jan 20 and 21", "We booked 22639, PNR 4521234567", "Add dinner at Saravana Bhavan on Jan 2 at 7 PM", "What are the darshan timings at Mantralayam?"];
 
   function openChat(focus = true) {
     const c = $("#chat"); c.hidden = false; $("#chat-fab").setAttribute("aria-expanded", "true"); document.body.classList.add("chat-open");
@@ -1252,6 +1277,7 @@ Formats:
     const welcome = `<li class="msg bot"><div class="bubble">Hi${store.get("name") ? " " + esc(store.get("name")) : ""}! I'm the trip planner. Ask me anything about the trip, or tell me what to change and I'll set it up for everyone.</div>
       <div class="chips chat-chips">${EXAMPLES.map((x) => `<button type="button" class="ask-chip" data-say="${esc(x)}">${esc(x)}</button>`).join("")}</div></li>`;
     log.innerHTML = welcome + chatLog.map(msgHtml).join("") + (chatBusy ? `<li class="msg bot"><div class="bubble typing" aria-label="The planner is typing"><i></i><i></i><i></i></div></li>` : "");
+    mountSuggestions();
     log.scrollTop = log.scrollHeight;
   }
   function msgHtml(m) {
@@ -1272,7 +1298,36 @@ Formats:
     } else if (ch && ch.problems && ch.problems.length) {
       card = `<p class="hint">Not done: ${esc(ch.problems.join(". "))}.</p>`;
     }
-    return `<li class="msg bot${m.error ? " is-error" : ""}"><div class="bubble">${esc(m.text)}</div>${card}</li>`;
+    const shows = (m.show || []).map(miniCard).filter(Boolean).join("");
+    const src = (m.sources || []).length ? `<p class="msg-sources">Sources: ${m.sources.map((x) => `<a href="${esc(x.uri)}" target="_blank" rel="noopener">${esc(x.title)}</a>`).join(", ")}</p>` : "";
+    const sugg = m.suggest ? `<div class="search-sugg" data-sugg="${m.id}"></div>` : "";
+    return `<li class="msg bot${m.error ? " is-error" : ""}"><div class="bubble">${esc(m.text)}</div>${shows ? `<div class="mini-cards">${shows}</div>` : ""}${card}${src}${sugg}</li>`;
+  }
+  // plan items the planner pulls up as cards in the chat
+  function miniCard(x) {
+    if (x.type === "day") {
+      const d = data.days.find((y) => y.date === x.date); if (!d) return "";
+      const trip = tripById(d.trip);
+      const steps = (d.steps || []).slice(0, 5).map((st) => `<li><span>${esc(st.time || "")}</span>${st.ref ? `<b>${esc(st.ref)}</b> ` : ""}${esc(st.text)}</li>`).join("");
+      return `<button type="button" class="mini-card" style="--trip:${esc(trip.color)}" data-open-day="${esc(d.date)}"><span class="mini-k">${esc(fmtLongDay(d.date))}, ${esc(trip.name)}</span><b>${esc(d.place)}</b>${steps ? `<ol>${steps}</ol>` : `<span>${esc(d.summary || "")}</span>`}<span class="mini-open">Open this day</span></button>`;
+    }
+    if (x.type === "ticket") {
+      const t = data.tickets.find((y) => y.id === x.id); if (!t) return "";
+      const st = bookingState(t);
+      return `<button type="button" class="mini-card is-ticket ${st.cls}" data-open-ticket="${esc(t.id)}"><span class="mini-k">${esc(KIND[t.kind] || "")}, ${esc(fmtDay(t.date))}</span><b>${esc(t.number ? t.number + " " : "")}${esc(t.name)}</b>${t.from && t.to ? `<span>${esc(t.dep || "")} ${esc(t.from)} to ${esc(t.arr || "")} ${esc(t.to)}</span>` : ""}<span>${esc(st.label)}${st.at ? ", " + esc(fmtIST(st.at)) + " IST" : ""}. ${t.costType === "total" ? fmtMoney(t.cost, ui.currency) + " total" : fmtMoney(t.cost, ui.currency) + " each"}</span><span class="mini-open">Open ticket</span></button>`;
+    }
+    if (x.type === "todo") {
+      const t = data.todos.find((y) => y.id === x.id); if (!t) return "";
+      return `<button type="button" class="mini-card" data-open-todo="${esc(t.id)}"><span class="mini-k">To-do${t.done ? ", done" : ""}</span><b>${esc(t.text)}</b><span>${esc(t.owner || "")}${t.due ? ", by " + esc(fmtDay(t.due)) : ""}</span><span class="mini-open">Open to-do list</span></button>`;
+    }
+    return "";
+  }
+  // Google's search suggestions must be shown as provided; a shadow root keeps their styles contained
+  function mountSuggestions() {
+    $$("#chat-log [data-sugg]").forEach((el) => {
+      const m = chatLog.find((x) => x.id === el.dataset.sugg); if (!m || !m.suggest || el.shadowRoot) return;
+      try { el.attachShadow({ mode: "open" }).innerHTML = m.suggest; } catch (e) {}
+    });
   }
 
   async function sendChat(text) {
@@ -1289,7 +1344,8 @@ Formats:
       const res = await callGemini(c, text, history);
       const ops = Array.isArray(res.operations) ? res.operations : [];
       const preview = applyOps(clone(data), ops);
-      chatLog.push({ id: uid("m"), role: "bot", text: String(res.reply || (preview.lines.length ? "Here's the change." : "Done.")), changes: ops.length ? { ops, lines: preview.lines, problems: preview.problems, state: preview.lines.length ? "pending" : "skipped" } : null });
+      const show = (Array.isArray(res.show) ? res.show : []).filter((x) => x && ["day", "ticket", "todo"].includes(x.type)).slice(0, 6);
+      chatLog.push({ id: uid("m"), role: "bot", text: String(res.reply || (preview.lines.length ? "Here's the change." : "Done.")), show, sources: res.sources || [], suggest: res.suggest || "", changes: ops.length ? { ops, lines: preview.lines, problems: preview.problems, state: preview.lines.length ? "pending" : "skipped" } : null });
     } catch (err) {
       chatLog.push({ id: uid("m"), role: "bot", text: err.message || "Something went wrong. Try again.", error: true });
     }
@@ -1377,6 +1433,15 @@ Formats:
   $("#chat-name").addEventListener("change", (e) => { const v = e.target.value.trim(); if (v) store.set("name", v); else store.del("name"); });
   $("#chat").addEventListener("keydown", (e) => { if (e.key === "Escape") closeChat(); });
   $("#chat-log").addEventListener("click", (e) => {
+    const o = e.target.closest("[data-open-day],[data-open-ticket],[data-open-todo]");
+    if (o) {
+      if (window.innerWidth <= 560) closeChat();
+      if (o.dataset.openTicket) { goTicket(o.dataset.openTicket); return; }
+      if (o.dataset.openTodo) { view = "todo"; store.set("view", view); render(); return; }
+      ui.tripFilter = "all"; view = "days"; store.set("view", view); render();
+      const card = document.getElementById("day-" + o.dataset.openDay); if (card) { card.scrollIntoView({ block: "start" }); card.classList.add("is-flash"); }
+      return;
+    }
     const b = e.target.closest("[data-say],[data-apply],[data-skip],[data-undo]"); if (!b) return;
     if (b.dataset.say) sendChat(b.dataset.say);
     else if (b.dataset.apply) applyChange(b.dataset.apply);
