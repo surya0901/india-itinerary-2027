@@ -127,6 +127,15 @@
       $("#main").innerHTML = `<p class="loading">The plan file didn't load (${esc(e.message)}). If you opened this file directly from your computer, run it through a local web server or open the GitHub Pages link instead.</p>`;
       return;
     }
+    if (pub.meta && pub.meta.workerUrl) {
+      // the Pages copy can lag a minute behind; ask the Worker for the latest plan
+      try {
+        const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 4000);
+        const r = await fetch(String(pub.meta.workerUrl).replace(/\/+$/, "") + "/plan", { cache: "no-store", signal: ctrl.signal });
+        clearTimeout(t);
+        if (r.ok) { const latest = await r.json(); if (latest && latest.meta && latest.days) pub = latest; }
+      } catch (e) { /* fall back to the Pages copy */ }
+    }
     data = clone(pub);
     let note = "";
 
@@ -315,7 +324,7 @@
     if (!libsPromise) {
       libsPromise = (window.d3 ? Promise.resolve() : loadScript("assets/vendor/d3.min.js"))
         .then(() => (window.topojson ? null : loadScript("assets/vendor/topojson-client.min.js")))
-        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js?v=5")));
+        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js?v=6")));
       libsPromise.catch(() => { libsPromise = null; });
     }
     return libsPromise;
@@ -817,53 +826,61 @@
   }
 
   // ---------- share and save ----------
-  // the Cloudflare Worker (if set) holds the keys; family members only need the family code
+  // The Cloudflare Worker (if set) holds the keys, so anyone can chat with the planner and save.
   const W = () => String((data && data.meta.workerUrl) || "").replace(/\/+$/, "");
-  async function saveViaWorker(btn, force) {
-    const who = store.get("name") || "Family", code = store.get("familyCode");
-    if (!code) { openFamilyCode(() => openShare()); return; }
-    btn.disabled = true; btn.textContent = "Saving…";
-    try {
-      const next = clone(data);
-      next.meta.updated = new Date().toISOString();
-      next.meta.updatedBy = who;
-      let r;
-      try { r = await fetch(W() + "/save", { method: "POST", headers: { "Content-Type": "application/json", "X-Family-Code": code }, body: JSON.stringify({ plan: next, who, baseUpdated: pub.meta.updated, force: !!force }) }); }
-      catch (e) { throw new Error("Couldn't reach the save service. Check the internet connection and try again."); }
-      const j = await r.json().catch(() => ({}));
-      if (r.status === 401) { store.del("familyCode"); throw new Error("That family code didn't work. Ask Surya for the right one and try again."); }
-      if (r.status === 409) {
-        btn.disabled = false; btn.textContent = "Save over their version"; btn.dataset.force = "1";
-        toast(`${j.updatedBy || "Someone"} saved a newer version. Press again to replace it, or discard your edits to load theirs.`);
-        return;
-      }
-      if (!r.ok) throw new Error(j.error || `Couldn't save (${r.status}). Try again in a minute.`);
-      data = next; pub = clone(next); store.del("draft"); store.del("draftBase");
-      closeDialog(); render(); hideBanner();
-      toast("Saved for everyone. The site updates in about a minute.");
-    } catch (err) {
-      btn.disabled = false; btn.textContent = "Save for everyone";
-      toast(err.message || "Couldn't save");
-    }
+  const who = () => store.get("name") || "Someone";
+  // save a whole plan for everyone; returns { ok, status, plan, latest, error }
+  async function postSave(plan, baseUpdated, force) {
+    const next = clone(plan);
+    next.meta.updated = new Date().toISOString();
+    next.meta.updatedBy = who();
+    let r;
+    try { r = await fetch(W() + "/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: next, who: who(), baseUpdated, force: !!force }) }); }
+    catch (e) { return { ok: false, status: 0, error: "Couldn't reach the save service. Check the internet connection and try again." }; }
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) return { ok: true, status: 200, plan: next };
+    return { ok: false, status: r.status, latest: j.latest, updatedBy: j.updatedBy, error: j.error === "conflict" ? `${j.updatedBy || "Someone"} saved a newer version first.` : (j.error || `Couldn't save (${r.status}). Try again in a minute.`) };
   }
-  function openFamilyCode(then, withModel) {
+  function adoptShared(plan) {
+    data = clone(plan); pub = clone(plan); store.del("draft"); store.del("draftBase");
+  }
+  async function saveViaWorker(btn, force) {
+    btn.disabled = true; btn.textContent = "Saving…";
+    const res = await postSave(data, pub.meta.updated, force);
+    if (res.ok) { adoptShared(res.plan); closeDialog(); render(); hideBanner(); toast("Saved for everyone"); return; }
+    btn.disabled = false;
+    if (res.status === 409) { btn.textContent = "Save over their version"; btn.dataset.force = "1"; toast(res.error + " Press again to replace it, or discard your edits to load theirs."); return; }
+    btn.textContent = "Save for everyone"; toast(res.error);
+  }
+  function openPlannerSettings(then) {
     const c = aiCfg();
-    openDialog("Family code", "Ask Surya for it. You only type it once on this phone or computer.",
-      `${field("Your name", "gname", store.get("name") || "", "text", 'placeholder="Shows who made a change"')}
-       ${field("Family code", "fcode", "", "password", `autocomplete="off" placeholder="${store.get("familyCode") ? "Saved. Leave empty to keep it" : "Type the family code"}"`)}
-       ${withModel ? select("Planner model", "gmodel", c.model || GEMINI_MODELS[0][0], GEMINI_MODELS) : ""}`,
-      `${store.get("familyCode") ? `<button class="btn btn-danger" type="button" data-dlg="forget">Forget the code</button>` : ""}<div class="right"><button class="btn" type="submit" value="cancel" formnovalidate>Cancel</button><button class="btn btn-primary" type="button" data-dlg="save">Save</button></div>`);
+    openDialog("Planner settings", "Saved on this device only.",
+      `${field("Your name", "gname", store.get("name") || "", "text", 'placeholder="So everyone knows who changed what"')}
+       ${select("Model", "gmodel", c.model || GEMINI_MODELS[0][0], GEMINI_MODELS)}
+       <p class="hint">Gemini 3.8 Flash is the best balance. Switch to Flash-Lite if replies are slow.</p>`,
+      `<button class="btn" type="button" data-dlg="clear">Clear chat history</button><div class="right"><button class="btn" type="submit" value="cancel" formnovalidate>Cancel</button><button class="btn btn-primary" type="button" data-dlg="save">Save</button></div>`);
     form.onclick = (e) => {
       const b = e.target.closest("[data-dlg]"); if (!b) return;
-      if (b.dataset.dlg === "forget") { store.del("familyCode"); closeDialog(); toast("Family code removed from this device"); return; }
-      const code = fv("fcode") || store.get("familyCode");
-      if (!code) { toast("Type the family code first"); return; }
+      if (b.dataset.dlg === "clear") { chatLog.length = 0; saveChat(); renderChat(); closeDialog(); toast("Chat cleared"); return; }
       if (fv("gname")) store.set("name", fv("gname"));
-      store.set("familyCode", code);
-      if (withModel) store.set("gemini", Object.assign({}, c, { model: fv("gmodel") }));
-      closeDialog(); toast("Saved on this device");
+      store.set("gemini", Object.assign({}, c, { model: fv("gmodel") }));
+      const n = $("#chat-name"); if (n) n.value = store.get("name") || "";
+      closeDialog(); toast("Settings saved");
       if (then) then();
     };
+  }
+  // pick up changes other people saved, without a reload
+  async function fetchLatest() {
+    if (!W()) return null;
+    try { const r = await fetch(W() + "/plan", { cache: "no-store" }); return r.ok ? await r.json() : null; } catch (e) { return null; }
+  }
+  async function pollLatest(quiet) {
+    if (document.hidden || dlg.open) return;
+    const latest = await fetchLatest();
+    if (!latest || !latest.meta || latest.meta.updated === pub.meta.updated) return;
+    if (dirty()) { pub = latest; store.set("draftBase", pub.meta.updated); showBanner(`${latest.meta.updatedBy || "Someone"} saved changes to the plan. You have edits of your own on this device.`, [["Load their version", () => { discard(); toast("Loaded the latest plan"); }], ["Keep mine", hideBanner]]); return; }
+    adoptShared(latest); render();
+    if (!quiet) toast(`Plan updated by ${latest.meta.updatedBy || "someone"}`);
   }
 
   function openShare() {
@@ -872,8 +889,8 @@
     const hasToken = !!store.get("token");
     openDialog("Share and save", dirty() ? "You have edits that only you can see right now." : "Everyone is looking at the same plan.",
       `${W() ? `<div class="share-block"><h3>Save for everyone</h3>
-        <p>Everyone sees your version in about a minute.</p>
-        <div class="field-row">${field("Your name", "who", name, "text", 'placeholder="Shows who saved it"')}${store.get("familyCode") ? "" : field("Family code", "fcode", "", "password", 'autocomplete="off" placeholder="Ask Surya"')}</div>
+        <p>Everyone sees your version right away.</p>
+        <div class="field-row">${field("Your name", "who", name, "text", 'placeholder="Shows who saved it"')}</div>
         <div class="toolbar"><button class="btn btn-primary" type="button" data-dlg="save-all">Save for everyone</button></div>
       </div>` : `<div class="share-block"><h3>Save for everyone</h3>
         <p>Writes your version to GitHub. The site updates for everyone in about a minute.</p>
@@ -901,8 +918,6 @@
       if (act === "github") saveToGitHub(b, b.dataset.force === "1");
       if (act === "save-all") {
         if (fv("who")) store.set("name", fv("who"));
-        if (fv("fcode")) store.set("familyCode", fv("fcode"));
-        if (!store.get("name")) { toast("Add your name first"); return; }
         saveViaWorker(b, b.dataset.force === "1");
       }
     };
@@ -1029,7 +1044,8 @@
 The trip: Surya's family of about 15 people, India, Dec 31 2026 to Feb 5 2027. They travel mostly by Indian Railways trains and Vande Bharat, with home base in Salem, Tamil Nadu. Elders are travelling, so keep plans realistic.
 
 Answer ONLY with a JSON object: {"reply": string, "operations": array}.
-- reply: one to three short, plain sentences for the family saying what you changed, or answering the question. No em dashes.
+- reply: a short, friendly chat message in plain words. Up to five sentences, or a short list with one item per line starting with "- ". No em dashes. When you propose operations, describe them as a proposal ("Here's the change" or "I can move..."), because the person taps Apply before anything changes.
+- You are chatting, so it's fine to ask a follow-up question, suggest ideas, or explain trains, Vande Bharat, bookings, costs and the places on the trip.
 - operations: the edits to make. Use an empty array when nothing should change (questions, or when the request is unclear).
 - Never invent train numbers, flight numbers, timings or prices. If the request needs facts you don't have, leave those fields empty, make the rest of the change, and say in reply what needs checking on IRCTC or the airline site.
 - If a request is ambiguous, ask one short question in reply and make no operations.
@@ -1069,7 +1085,7 @@ Formats:
 - Route legs drive the globe. from and to are place ids; add a place first if needed.`;
 
   function openAISetup(then) {
-    if (W()) return openFamilyCode(then, true);
+    if (W()) return openPlannerSettings(then);
     const c = aiCfg();
     openDialog("Set up the planner", "Uses Google Gemini. One-time setup on each phone or computer.",
       `<p>The planner needs a Gemini API key. It's saved only in this browser and only ever sent to Google.</p>
@@ -1094,29 +1110,28 @@ Formats:
     };
   }
 
-  async function callGemini(c, text) {
+  async function callGemini(c, text, history) {
     const model = c.model || GEMINI_MODELS[0][0];
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
     const now = new Date();
     const sys = `${AI_RULES}\n\nToday is ${now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: IST })} in India.\nCurrent plan JSON:\n${JSON.stringify(data)}`;
-    const contents = chat.map((m) => ({ role: m.role, parts: [{ text: m.text }] }));
-    contents.push({ role: "user", parts: [{ text: `${store.get("name") || "A family member"} asks: ${text}` }] });
+    const contents = (history || []).map((m) => ({ role: m.role, parts: [{ text: m.text }] }));
+    contents.push({ role: "user", parts: [{ text: `${store.get("name") || "A family member"} says: ${text}` }] });
     const body = { systemInstruction: { parts: [{ text: sys }] }, contents, generationConfig: { responseMimeType: "application/json", temperature: 0.2 } };
     let r;
     try {
       r = W()
-        ? await fetch(W() + "/ask", { method: "POST", headers: { "Content-Type": "application/json", "X-Family-Code": store.get("familyCode") || "" }, body: JSON.stringify(Object.assign({ model }, body)) })
+        ? await fetch(W() + "/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.assign({ model }, body)) })
         : await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": c.key }, body: JSON.stringify(body) });
     }
     catch (e) { throw new Error("Couldn't reach Gemini. Check the internet connection and try again."); }
     if (!r.ok) {
       let msg = "", raw = {}; try { raw = await r.json(); msg = typeof raw.error === "string" ? raw.error : ((raw.error || {}).message || ""); } catch (e) {}
-      if (r.status === 401 && msg === "wrong_code") { store.del("familyCode"); throw new Error("That family code didn't work. Ask Surya for the right one, then try again."); }
       if (r.status === 503) throw new Error(msg || "The planner isn't fully set up yet.");
       if (r.status === 400 && /api key/i.test(msg)) throw new Error("Gemini didn't accept the key. Open Planner settings and paste it again.");
       if (r.status === 403) throw new Error("This key isn't allowed to use the Gemini API. In AI Studio, check the key is restricted to the Gemini API, or create a new one.");
       if (r.status === 404) throw new Error(`The model ${model} isn't available to this key. Pick another one in Planner settings.`);
-      if (r.status === 429) throw new Error("Gemini's free limit is used up for now. Try again in a minute.");
+      if (r.status === 429) throw new Error(W() && msg && !/quota|exhausted/i.test(msg) ? msg : "Gemini's free limit is used up for now. Try again in a minute.");
       throw new Error(`Gemini returned an error (${r.status}). ${msg.slice(0, 160)}`);
     }
     const j = await r.json();
@@ -1217,56 +1232,110 @@ Formats:
     return { lines, problems };
   }
 
-  async function askPlanner(text) {
-    text = (text || "").trim(); if (!text) { $("#ask-text").focus(); return; }
-    const c = aiCfg();
-    if (W() ? !store.get("familyCode") : !c.key) { openAISetup(() => askPlanner(text)); return; }
-    const box = $("#ask"), go = $("#ask-go");
-    box.classList.add("is-busy"); go.disabled = true; go.textContent = "Thinking…";
-    try {
-      const res = await callGemini(c, text);
-      const ops = Array.isArray(res.operations) ? res.operations : [];
-      const preview = applyOps(clone(data), ops);
-      chat.push({ role: "user", text }, { role: "model", text: JSON.stringify({ reply: res.reply || "", operations: ops }) });
-      while (chat.length > 8) chat.shift();
-      $("#ask-text").value = "";
-      showPlannerResult(text, String(res.reply || ""), ops, preview);
-    } catch (err) { toast(err.message || "Something went wrong with the planner"); }
-    finally { box.classList.remove("is-busy"); go.disabled = false; go.textContent = "Ask"; }
+  // ---------- chat with the planner ----------
+  const chatLog = (store.get("chatlog") || []).map((m) => (m.changes && ["pending", "saving"].includes(m.changes.state) ? Object.assign(m, { changes: Object.assign(m.changes, { state: "skipped" }) }) : m));
+  const undoSnapshots = {}; // message id -> plan before that change (this visit only)
+  let chatBusy = false;
+  const saveChat = () => { while (chatLog.length > 40) chatLog.shift(); store.set("chatlog", chatLog.map((m) => (m.changes ? Object.assign({}, m, { changes: Object.assign({}, m.changes, { ops: m.changes.state === "pending" ? m.changes.ops : [] }) }) : m))); };
+  const EXAMPLES = ["What do we need to book this week?", "Move Trichy to Jan 20 and 21", "We booked 22639, PNR 4521234567", "Add dinner at Saravana Bhavan on Jan 2 at 7 PM", "What's the cheapest way from Salem to Mysuru?", "Only 12 people are going to Rajasthan"];
+
+  function openChat(focus = true) {
+    const c = $("#chat"); c.hidden = false; $("#chat-fab").setAttribute("aria-expanded", "true"); document.body.classList.add("chat-open");
+    renderChat();
+    if (focus) setTimeout(() => $("#chat-text").focus(), 30);
+  }
+  function closeChat() { $("#chat").hidden = true; $("#chat-fab").setAttribute("aria-expanded", "false"); document.body.classList.remove("chat-open"); $("#chat-fab").focus(); }
+
+  function renderChat() {
+    const log = $("#chat-log"); if (!log) return;
+    const welcome = `<li class="msg bot"><div class="bubble">Hi${store.get("name") ? " " + esc(store.get("name")) : ""}! I'm the trip planner. Ask me anything about the trip, or tell me what to change and I'll set it up for everyone.</div>
+      <div class="chips chat-chips">${EXAMPLES.map((x) => `<button type="button" class="ask-chip" data-say="${esc(x)}">${esc(x)}</button>`).join("")}</div></li>`;
+    log.innerHTML = welcome + chatLog.map(msgHtml).join("") + (chatBusy ? `<li class="msg bot"><div class="bubble typing" aria-label="The planner is typing"><i></i><i></i><i></i></div></li>` : "");
+    log.scrollTop = log.scrollHeight;
+  }
+  function msgHtml(m) {
+    if (m.role === "user") return `<li class="msg user"><div class="bubble">${esc(m.text)}</div>${m.by ? `<span class="msg-by">${esc(m.by)}</span>` : ""}</li>`;
+    let card = "";
+    const ch = m.changes;
+    if (ch && ch.lines && ch.lines.length) {
+      const shown = ch.lines.slice(0, 8).map((l) => `<li>${esc(l)}</li>`).join("") + (ch.lines.length > 8 ? `<li>and ${ch.lines.length - 8} more</li>` : "");
+      const state = {
+        pending: `<div class="card-actions"><button class="btn btn-primary btn-small" type="button" data-apply="${m.id}">${W() ? "Apply for everyone" : "Apply"}</button><button class="btn btn-small" type="button" data-skip="${m.id}">Not now</button></div>`,
+        saving: `<p class="card-state">Saving…</p>`,
+        saved: `<div class="card-actions"><p class="card-state is-ok">${W() ? "Saved for everyone" : "Applied on this device"}${ch.by ? ` by ${esc(ch.by)}` : ""}</p>${undoSnapshots[m.id] ? `<button class="btn btn-small" type="button" data-undo="${m.id}">Undo</button>` : ""}</div>`,
+        undone: `<p class="card-state">Undone</p>`,
+        skipped: `<p class="card-state">Not applied</p>`,
+        error: `<div class="card-actions"><p class="card-state is-bad">${esc(ch.error || "Couldn't save")}</p><button class="btn btn-small" type="button" data-apply="${m.id}">Try again</button></div>`,
+      }[ch.state] || "";
+      card = `<div class="change-card"><p class="change-title">${ch.lines.length} ${ch.lines.length === 1 ? "change" : "changes"}</p><ul class="change-list">${shown}</ul>${ch.problems && ch.problems.length ? `<p class="hint">Not done: ${esc(ch.problems.join(". "))}.</p>` : ""}${state}</div>`;
+    } else if (ch && ch.problems && ch.problems.length) {
+      card = `<p class="hint">Not done: ${esc(ch.problems.join(". "))}.</p>`;
+    }
+    return `<li class="msg bot${m.error ? " is-error" : ""}"><div class="bubble">${esc(m.text)}</div>${card}</li>`;
   }
 
-  function showPlannerResult(text, reply, ops, preview) {
-    const hasChanges = preview.lines.length > 0;
-    const canSave = W() ? true : !!store.get("token");
-    openDialog(hasChanges ? "Check these changes" : "Planner", `You asked: ${text}`,
-      `${reply ? `<p class="ai-reply">${esc(reply)}</p>` : ""}
-       ${hasChanges ? `<div class="share-block"><h3>What will change</h3><ul class="change-list">${preview.lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul></div>` : ""}
-       ${preview.problems.length ? `<p class="hint">Not done: ${esc(preview.problems.join(". "))}.</p>` : ""}
-       ${hasChanges ? `<p class="hint">Nothing changes until you press Apply. You can undo it afterwards.</p>` : ""}`,
-      hasChanges
-        ? `<div class="right"><button class="btn" type="submit" value="cancel" formnovalidate>Don't change</button>${canSave ? `<button class="btn" type="button" data-dlg="apply-save">Apply and save for everyone</button>` : ""}<button class="btn btn-primary" type="button" data-dlg="apply">Apply</button></div>`
-        : `<div class="right"><button class="btn btn-primary" type="submit" value="cancel">Done</button></div>`);
-    let applied = false, before = null;
-    form.onclick = (e) => {
-      const b = e.target.closest("[data-dlg]"); if (!b) return;
-      if (!applied) {
-        before = clone(data);
-        commit((d) => { applyOps(d, ops); });
-        applied = true;
-        const undo = () => { commit((d) => { Object.keys(d).forEach((k) => delete d[k]); Object.assign(d, clone(before)); }); hideBanner(); toast("Undone"); };
-        showBanner(`The planner made ${preview.lines.length} ${preview.lines.length === 1 ? "change" : "changes"}. They're only on this device until you save for everyone.`, [
-          ["Undo", undo], ["Save for everyone", () => { hideBanner(); openShare(); }],
-        ]);
-      }
-      if (b.dataset.dlg === "apply-save") {
-        const force = b.dataset.force === "1";
-        if (W()) saveViaWorker(b, force);
-        else saveToGitHub(b, force, { who: store.get("name") || "Planner", repo: repoInfo(), token: store.get("token") });
-        return;
-      }
-      closeDialog();
-    };
+  async function sendChat(text) {
+    text = (text || "").trim(); if (!text || chatBusy) return;
+    const c = aiCfg();
+    if (!W() && !c.key) { openAISetup(() => sendChat(text)); return; }
+    openChat(false);
+    const history = [];
+    chatLog.slice(-8).forEach((m) => { if (m.role === "user") history.push({ role: "user", text: m.text }); else if (!m.error) history.push({ role: "model", text: JSON.stringify({ reply: m.text, operations: [] }) }); });
+    chatLog.push({ id: uid("m"), role: "user", text, by: store.get("name") || "" });
+    chatBusy = true; saveChat(); renderChat();
+    $("#chat-text").value = ""; autoGrow();
+    try {
+      const res = await callGemini(c, text, history);
+      const ops = Array.isArray(res.operations) ? res.operations : [];
+      const preview = applyOps(clone(data), ops);
+      chatLog.push({ id: uid("m"), role: "bot", text: String(res.reply || (preview.lines.length ? "Here's the change." : "Done.")), changes: ops.length ? { ops, lines: preview.lines, problems: preview.problems, state: preview.lines.length ? "pending" : "skipped" } : null });
+    } catch (err) {
+      chatLog.push({ id: uid("m"), role: "bot", text: err.message || "Something went wrong. Try again.", error: true });
+    }
+    chatBusy = false; saveChat(); renderChat();
   }
+
+  async function applyChange(id) {
+    const m = chatLog.find((x) => x.id === id); if (!m || !m.changes) return;
+    const ops = m.changes.ops;
+    if (!ops || !ops.length) { m.changes.state = "skipped"; renderChat(); return; }
+    if (!W()) {
+      undoSnapshots[id] = clone(data);
+      commit((d) => { applyOps(d, ops); });
+      Object.assign(m.changes, { state: "saved", by: who() }); saveChat(); renderChat();
+      showBanner("The planner's change is only on this device. Save it so everyone sees it.", [["Save for everyone", () => { hideBanner(); openShare(); }]]);
+      return;
+    }
+    m.changes.state = "saving"; renderChat();
+    let base = clone(data), baseUpdated = pub.meta.updated;
+    const next = clone(base); applyOps(next, ops);
+    let res = await postSave(next, baseUpdated);
+    if (!res.ok && res.status === 409 && res.latest) {
+      // someone saved first: redo this change on top of their version
+      base = clone(res.latest); baseUpdated = res.latest.meta.updated;
+      const again = clone(base); applyOps(again, ops);
+      res = await postSave(again, baseUpdated);
+    }
+    if (res.ok) {
+      undoSnapshots[id] = { plan: base, savedUpdated: res.plan.meta.updated };
+      adoptShared(res.plan); render();
+      Object.assign(m.changes, { state: "saved", by: who() });
+    } else {
+      Object.assign(m.changes, { state: "error", error: res.error });
+    }
+    saveChat(); renderChat();
+  }
+
+  async function undoChange(id) {
+    const m = chatLog.find((x) => x.id === id), snap = undoSnapshots[id]; if (!m || !snap) return;
+    if (!W()) { commit((d) => { Object.keys(d).forEach((k) => delete d[k]); Object.assign(d, clone(snap)); }); m.changes.state = "undone"; delete undoSnapshots[id]; saveChat(); renderChat(); return; }
+    m.changes.state = "saving"; renderChat();
+    const res = await postSave(snap.plan, pub.meta.updated);
+    if (res.ok) { adoptShared(res.plan); render(); m.changes.state = "undone"; delete undoSnapshots[id]; }
+    else { Object.assign(m.changes, { state: "saved" }); chatLog.push({ id: uid("m"), role: "bot", text: res.status === 409 ? "I couldn't undo that because someone changed the plan after it. Tell me what to change back and I'll do it." : res.error, error: true }); }
+    saveChat(); renderChat();
+  }
+  function autoGrow() { const t = $("#chat-text"); if (!t) return; t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 140) + "px"; }
 
   // ---------- banner and toast ----------
   function showBanner(text, actions) {
@@ -1294,9 +1363,25 @@ Formats:
   });
   $("#hero").addEventListener("click", (e) => { const b = e.target.closest("[data-go]"); if (b) { view = b.dataset.go; store.set("view", view); render(); } });
   $("#open-share").addEventListener("click", openShare);
-  $("#ask").addEventListener("submit", (e) => { e.preventDefault(); askPlanner($("#ask-text").value); });
-  $("#ask-settings").addEventListener("click", () => openAISetup());
-  $$("#ask [data-example]").forEach((b) => b.addEventListener("click", () => { const i = $("#ask-text"); i.value = b.dataset.example; i.focus(); }));
+  $("#ask").addEventListener("submit", (e) => { e.preventDefault(); const v = $("#ask-text").value; $("#ask-text").value = ""; if (v.trim()) sendChat(v); else openChat(); });
+  $("#ask-settings").addEventListener("click", () => openPlannerSettings());
+  $$("#ask [data-example]").forEach((b) => b.addEventListener("click", () => sendChat(b.dataset.example)));
+  $("#chat-fab").addEventListener("click", () => ($("#chat").hidden ? openChat() : closeChat()));
+  $("#chat-close").addEventListener("click", closeChat);
+  $("#chat-settings").addEventListener("click", () => openPlannerSettings());
+  $("#chat-form").addEventListener("submit", (e) => { e.preventDefault(); sendChat($("#chat-text").value); });
+  $("#chat-text").addEventListener("input", autoGrow);
+  $("#chat-text").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendChat($("#chat-text").value); } });
+  $("#chat-name").value = store.get("name") || "";
+  $("#chat-name").addEventListener("change", (e) => { const v = e.target.value.trim(); if (v) store.set("name", v); else store.del("name"); });
+  $("#chat").addEventListener("keydown", (e) => { if (e.key === "Escape") closeChat(); });
+  $("#chat-log").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-say],[data-apply],[data-skip],[data-undo]"); if (!b) return;
+    if (b.dataset.say) sendChat(b.dataset.say);
+    else if (b.dataset.apply) applyChange(b.dataset.apply);
+    else if (b.dataset.undo) undoChange(b.dataset.undo);
+    else if (b.dataset.skip) { const m = chatLog.find((x) => x.id === b.dataset.skip); if (m) { m.changes.state = "skipped"; saveChat(); renderChat(); } }
+  });
   // tap one price to flip just that price; the switch in the header flips them all
   document.addEventListener("click", (e) => {
     const m = e.target.closest(".money");
@@ -1311,6 +1396,8 @@ Formats:
     if (data && ["calendar", "globe", "days", "tickets", "todo", "budget", "info"].includes(v) && v !== view) { view = v; store.set("view", v); render(); return; }
     if (location.hash.startsWith("#plan=")) { const p = await readPlanFromHash(); if (p) { data = p; store.set("draft", data); store.set("draftBase", pub.meta.updated); history.replaceState(null, "", location.pathname); render(); toast("Loaded the shared version"); } } });
   setInterval(() => { if (!dlg.open && data) renderHero(); }, 60000);
+  setInterval(() => { if (data) pollLatest(false); }, 45000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && data) pollLatest(false); });
 
   load();
 })();

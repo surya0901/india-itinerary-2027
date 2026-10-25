@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
-  <link rel="stylesheet" href="assets/style.css?v=5">
+  <link rel="stylesheet" href="assets/style.css?v=6">
 </head>
 <body>
   <a class="skip" href="#main">Skip to the plan</a>
@@ -38,10 +38,10 @@
   <section class="wrap hero" id="hero" aria-live="polite"></section>
 
   <form class="wrap ask" id="ask" autocomplete="off">
-    <label class="ask-label" for="ask-text">Change the plan by typing what you want</label>
+    <label class="ask-label" for="ask-text">Ask the planner or tell it what to change</label>
     <div class="ask-row">
       <input id="ask-text" type="text" enterkeyhint="send" placeholder="For example: move Trichy to Jan 20 and 21">
-      <button class="btn btn-primary" id="ask-go" type="submit">Ask</button>
+      <button class="btn btn-primary" id="ask-go" type="submit">Send</button>
     </div>
     <div class="ask-foot">
       <span class="ask-try">Try</span>
@@ -49,7 +49,7 @@
       <button type="button" class="ask-chip" data-example="Add dinner at Saravana Bhavan on Jan 2 at 7 PM">Add a dinner on Jan 2</button>
       <button type="button" class="ask-chip" data-example="Only 12 people are going to Rajasthan">12 people for Rajasthan</button>
       <button type="button" class="ask-chip" data-example="What do we need to book in the next two weeks?">What to book soon?</button>
-      <button type="button" class="btn-link ask-settings" id="ask-settings">Planner settings</button>
+      <button type="button" class="btn-link ask-settings" id="ask-settings">Your name and settings</button>
     </div>
   </form>
 
@@ -75,12 +75,38 @@
     <p>Train times and fares come from public timetables and change. Always confirm on <a href="https://www.irctc.co.in/" rel="noopener" target="_blank">IRCTC</a> before booking.</p>
   </footer>
 
+  <button class="chat-fab" id="chat-fab" type="button" aria-controls="chat" aria-expanded="false">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.2 3.6c-.5.4-1.3.1-1.3-.6V16A2.5 2.5 0 0 1 4 13.5z" fill="currentColor"/><circle cx="8.5" cy="9.5" r="1.2" fill="var(--coach)"/><circle cx="12" cy="9.5" r="1.2" fill="var(--coach)"/><circle cx="15.5" cy="9.5" r="1.2" fill="var(--coach)"/></svg>
+    <span>Ask the planner</span>
+  </button>
+
+  <section class="chat" id="chat" hidden aria-labelledby="chat-title" role="dialog" aria-modal="false">
+    <header class="chat-head">
+      <div>
+        <h2 id="chat-title">Trip planner</h2>
+        <p>Ask anything, or tell it what to change. Changes save for everyone.</p>
+      </div>
+      <button class="x" id="chat-close" type="button" aria-label="Close the planner">×</button>
+    </header>
+    <div class="chat-who">
+      <label for="chat-name">Your name</label>
+      <input id="chat-name" type="text" autocomplete="given-name" placeholder="So everyone knows who changed what">
+      <button class="btn-link" id="chat-settings" type="button">Settings</button>
+    </div>
+    <ol class="chat-log" id="chat-log" aria-live="polite"></ol>
+    <form class="chat-input" id="chat-form" autocomplete="off">
+      <label class="sr-only" for="chat-text">Message the planner</label>
+      <textarea id="chat-text" rows="1" enterkeyhint="send" placeholder="Type a message"></textarea>
+      <button class="btn btn-primary" id="chat-send" type="submit">Send</button>
+    </form>
+  </section>
+
   <dialog id="dialog" aria-labelledby="dialog-title">
     <form method="dialog" id="dialog-form" class="dialog-form" novalidate></form>
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="assets/app.js?v=5"></script>
+  <script src="assets/app.js?v=6"></script>
 </body>
 </html>

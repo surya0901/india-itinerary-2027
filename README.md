@@ -12,29 +12,29 @@ Our family plan for India, Dec 31, 2026 to Feb 5, 2027: Chennai, Kerala, Salem, 
 - **Tickets** for every train, Vande Bharat, flight, darshan, stay and activity, with the price, the date booking opens (in India time and your own time), booking links, status and PNR.
 - **To-do** list with who does what and by when. Unbooked tickets show up here on their own.
 - **Budget** that adds everything up for the group. Prices switch between rupees and dollars at the live exchange rate: use the switch at the top, or tap any single price.
-- **Change the plan by typing**: ask Gemini for a change and preview it before it applies.
+- **Trip planner chat**: ask questions or ask for changes in plain words, then apply them for everyone.
 - **Good to know**: IRCTC rules, booking for 15 people, which class to pick, Tirumala darshan rules and links.
 - Calendar files you can add to your phone: the whole trip, or reminders for when each booking opens.
 
-## Change the plan by typing
+## Trip planner chat
 
-The box under the countdown takes plain requests like "move Trichy to Jan 20 and 21", "we booked 22639, PNR 4521234567" or "what do we need to book this week?". Google Gemini reads the whole plan, proposes specific edits, and the site shows exactly what will change before anything happens. Press **Apply** (and **Undo** if needed), then save for everyone as usual.
+Tap **Ask the planner** (bottom right) or use the box under the countdown. Ask questions ("what do we need to book this week?") or ask for changes ("move Trichy to Jan 20 and 21", "we booked 22639, PNR 4521234567"). Google Gemini reads the whole plan and replies. Changes show up as a card. **Apply for everyone** saves them for everyone straight away, and **Undo** puts things back.
 
-Family members only need the **family code** (ask Surya). The keys live in a small Cloudflare Worker (`worker/worker.js`), never in this public repository:
+Anyone with the link can use it, with no keys or codes. The keys live in a small Cloudflare Worker (`worker/worker.js`), never in this public repository:
 
-- `POST /ask` forwards planner requests to Gemini with the shared key.
-- `POST /save` writes `data/trip.json` to this repository, so "Save for everyone" works without a GitHub key on each phone.
-- Both require the family code and only accept requests from the trip site.
+- `GET /plan` returns the latest plan from GitHub, so everyone sees changes within seconds.
+- `POST /ask` forwards chat messages to Gemini.
+- `POST /save` writes `data/trip.json` to this repository.
 
-Worker secrets (Cloudflare dashboard, the Worker's Settings, Variables and Secrets): `GEMINI_API_KEY`, `GITHUB_TOKEN` (fine-grained, this repository only, Contents read and write) and `FAMILY_CODE`. The Worker's address goes in `meta.workerUrl` in `data/trip.json`.
+Safeguards: only the trip site can call the Worker, each visitor is rate limited, a save that would delete most of the plan is refused, and if two people save at once the planner re-applies its change on top of the newer version. GitHub keeps every version, so anything can be restored from the commit history.
 
-Without a Worker, the site falls back to asking each device for its own Gemini key.
+Worker secrets (Cloudflare dashboard, the Worker's Settings, Variables and Secrets): `GEMINI_API_KEY` and `GITHUB_TOKEN` (fine-grained, this repository only, Contents read and write, expires Apr 23, 2027). The Worker's address is `meta.workerUrl` in `data/trip.json`.
 
 ## Editing
 
 Anyone who opens the site can change anything: days, timings, tickets, prices, to-dos, names. Edits are saved on that device until you share them. Open **Share and save** to:
 
-1. **Save for everyone.** Writes your version to this repository, and the site updates for everyone in about a minute. This needs a GitHub access key once per device (see below).
+1. **Save for everyone.** Writes your version to this repository, and everyone sees it right away.
 2. **Copy a link with your changes.** Whoever opens the link sees your version and can keep editing.
 3. **Download or load a plan file.**
 
