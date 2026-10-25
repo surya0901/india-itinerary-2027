@@ -207,18 +207,19 @@
     const lateTodos = data.todos.filter((x) => !x.done && x.due && parseDay(x.due) < parseDay(isoDay(now)));
     let rows = "";
     if (open.length) {
-      const names = open.slice(0, 3).map((t) => esc(t.number ? `${t.number} ${shortRoute(t)}` : t.name)).join(", ");
+      const names = open.slice(0, 3).map((t) => esc(tixLabel(t))).join(", ");
       rows += `<span class="k">Book now</span><span class="v"><b>${open.length} ${open.length === 1 ? "booking is" : "bookings are"} open and not booked:</b> ${names}${open.length > 3 ? " and more" : ""}. <button class="btn-link" data-go="tickets" type="button">See tickets</button></span>`;
     }
     if (upcoming[0]) {
       const { t, s } = upcoming[0];
       const when = localIsIST() ? fmtIST(s.at) : `${fmtLocal(s.at)} your time (${fmtIST(s.at)} in India)`;
-      rows += `<span class="k">Next to open</span><span class="v"><b>${esc(t.number ? t.number + " " : "")}${esc(shortRoute(t) || t.name)}</b> for ${esc(fmtDay(t.date))}. Opens ${esc(when)}.</span>`;
+      rows += `<span class="k">Next to open</span><span class="v"><b>${esc(tixLabel(t))}</b> for ${esc(fmtDay(t.date))}. Opens ${esc(when)}.</span>`;
     }
     if (lateTodos.length) rows += `<span class="k">Overdue</span><span class="v">${lateTodos.length} to-do ${lateTodos.length === 1 ? "item" : "items"}. <button class="btn-link" data-go="todo" type="button">Open the list</button></span>`;
     $("#hero").innerHTML = `<p class="hero-line">${line}</p>${rows ? `<div class="hero-next${open.length ? " is-urgent" : ""}">${rows}</div>` : ""}`;
   }
   const shortRoute = (t) => (t.from && t.to ? `${t.from.replace(/\s*\(.*\)/, "")} to ${t.to.replace(/\s*\(.*\)/, "")}` : "");
+  const tixLabel = (t) => (shortRoute(t) ? `${t.number ? t.number + " " : ""}${shortRoute(t)}` : `${t.number && !t.name.includes(t.number) ? t.number + " " : ""}${t.name}`);
 
   // ---------- calendar ----------
   function viewCalendar() {
@@ -484,7 +485,7 @@
       .sort((a, b) => (a.s.at || 0) - (b.s.at || 0));
     const autoRows = auto.map(({ t, s }) => {
       const when = s.at ? (s.key === "open" ? `Opened ${fmtIST(s.at)} IST` : `Opens ${fmtIST(s.at)} IST`) : "Book any time";
-      return `<div class="todo is-auto"><input type="checkbox" data-ticket-done="${esc(t.id)}" aria-label="Mark ${esc(t.name)} as booked"><div class="todo-text"><span>Book ${esc(t.number ? t.number + ", " : "")}${esc(shortRoute(t) || t.name)} for ${esc(fmtDay(t.date))}</span><div class="todo-meta"><span class="${s.key === "open" ? "late" : ""}">${esc(when)}</span></div></div><a class="btn btn-small" href="#tickets" data-ticket="${esc(t.id)}">Ticket</a></div>`;
+      return `<div class="todo is-auto"><input type="checkbox" data-ticket-done="${esc(t.id)}" aria-label="Mark ${esc(t.name)} as booked"><div class="todo-text"><span>Book ${esc(tixLabel(t))} for ${esc(fmtDay(t.date))}</span><div class="todo-meta"><span class="${s.key === "open" ? "late" : ""}">${esc(when)}</span></div></div><a class="btn btn-small" href="#tickets" data-ticket="${esc(t.id)}">Ticket</a></div>`;
     }).join("");
     const group = (title, items, sub) => items.length ? `<div class="todo-group"><h3>${title}${sub ? ` <small>${sub}</small>` : ""}</h3>${items.map(todoRow).join("")}</div>` : "";
     const ownerOpts = data.people.map((p) => `<option>${esc(p)}</option>`).join("");
@@ -942,7 +943,7 @@
         const end = new Date(+at + 30 * 60000);
         const url = (t.links && t.links[0] && t.links[0].url) || "https://www.irctc.co.in/";
         L.push("BEGIN:VEVENT", `UID:book-${t.id}@india-itinerary-2027`, `DTSTAMP:${stamp}`, `DTSTART:${utc(at)}`, `DTEND:${utc(end)}`,
-          `SUMMARY:${e(`Book ${t.number ? t.number + " " : ""}${shortRoute(t) || t.name} (${fmtDay(t.date)})`)}`,
+          `SUMMARY:${e(`Book ${tixLabel(t)} (${fmtDay(t.date)})`)}`,
           `DESCRIPTION:${e(`Booking opens now for ${fmtLongDay(t.date)}. Class ${t.class}. ${peopleFor(t)} people, ${Math.ceil(peopleFor(t) / 6)} bookings of up to 6.\n${url}`)}`,
           "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:Booking opens in 15 minutes", "TRIGGER:-PT15M", "END:VALARM", "END:VEVENT");
       });
@@ -993,7 +994,10 @@
   }, true);
   fetchRate();
   dlg.addEventListener("close", () => { form.onclick = null; });
-  window.addEventListener("hashchange", async () => { if (location.hash.startsWith("#plan=")) { const p = await readPlanFromHash(); if (p) { data = p; store.set("draft", data); store.set("draftBase", pub.meta.updated); history.replaceState(null, "", location.pathname); render(); toast("Loaded the shared version"); } } });
+  window.addEventListener("hashchange", async () => {
+    const v = location.hash.slice(1);
+    if (data && ["calendar", "globe", "days", "tickets", "todo", "budget", "info"].includes(v) && v !== view) { view = v; store.set("view", v); render(); return; }
+    if (location.hash.startsWith("#plan=")) { const p = await readPlanFromHash(); if (p) { data = p; store.set("draft", data); store.set("draftBase", pub.meta.updated); history.replaceState(null, "", location.pathname); render(); toast("Loaded the shared version"); } } });
   setInterval(() => { if (!dlg.open && data) renderHero(); }, 60000);
 
   load();
