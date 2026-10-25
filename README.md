@@ -20,12 +20,18 @@ Our family plan for India, Dec 31, 2026 to Feb 5, 2027: Chennai, Kerala, Salem, 
 
 Tap **Ask the planner** (bottom right) or use the box under the countdown. Ask questions ("what do we need to book this week?") or ask for changes ("move Trichy to Jan 20 and 21", "we booked 22639, PNR 4521234567"). Google Gemini reads the whole plan and replies. Changes show up as a card. **Apply for everyone** saves them for everyone straight away, and **Undo** puts things back.
 
-It can also pull up information: cards for days, tickets and to-dos from the plan ("show me the temple loop days"), and current facts from the web through Google Search grounding ("what's the weather in Jaipur in late January?"), with source links. Web search can be switched off in the chat settings.
+It can also pull up information:
+
+- Cards for days, tickets and to-dos from the plan ("show me the temple loop days"), which open that part of the site.
+- Weather from [Open-Meteo](https://open-meteo.com/): the forecast within two weeks, and the same dates last year as a guide for later dates.
+- Background on places, temples, forts, festivals and food from Wikipedia, with links.
+
+These lookups are free and need no keys. Google Search grounding can be switched on in the chat settings, but Google only offers it on a Gemini key with billing turned on.
 
 Anyone with the link can use it, with no keys or codes. The keys live in a small Cloudflare Worker (`worker/worker.js`), never in this public repository:
 
 - `GET /plan` returns the latest plan from GitHub, so everyone sees changes within seconds.
-- `POST /ask` forwards chat messages to Gemini, with Google Search as the only allowed tool.
+- `POST /ask` forwards chat messages to Gemini. The only tools it lets through are the site's weather and Wikipedia lookups, or Google Search.
 - `POST /save` writes `data/trip.json` to this repository.
 
 Safeguards: only the trip site can call the Worker, each visitor is rate limited, a save that would delete most of the plan is refused, and if two people save at once the planner re-applies its change on top of the newer version. GitHub keeps every version, so anything can be restored from the commit history.

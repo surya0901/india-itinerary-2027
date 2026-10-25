@@ -2,7 +2,7 @@
 // Holds the Gemini key and a GitHub key so anyone using the trip site can chat with the
 // planner and save changes, without keys of their own.
 //   GET  /plan  the latest plan, straight from GitHub (fresher than the GitHub Pages copy)
-//   POST /ask   forwards a planner chat request to Gemini (optionally with Google Search)
+//   POST /ask   forwards a planner chat request to Gemini (with the site's lookup tools)
 //   POST /save  writes data/trip.json to the GitHub repo
 //   GET  /ping  says whether the secrets are set (never returns them)
 // Secrets (Cloudflare: Settings, Variables and Secrets): GEMINI_API_KEY, GITHUB_TOKEN
@@ -62,8 +62,11 @@ export default {
       let body;
       try { body = await req.json(); } catch (e) { return json({ error: "Bad request" }, 400); }
       const model = /^[\w.-]{3,60}$/.test(body.model || "") ? body.model : DEFAULT_MODEL;
-      // the only tool allowed is Google Search grounding, so the planner can look things up
-      const tools = Array.isArray(body.tools) && body.tools.length === 1 && body.tools[0] && typeof body.tools[0].google_search === "object" ? [{ google_search: {} }] : undefined;
+      // allowed tools: Google Search grounding, or the site's own weather and Wikipedia lookups
+      let tools;
+      const t0 = Array.isArray(body.tools) && body.tools.length === 1 ? body.tools[0] || {} : null;
+      if (t0 && typeof t0.google_search === "object") tools = [{ google_search: {} }];
+      else if (t0 && Array.isArray(t0.functionDeclarations) && t0.functionDeclarations.length <= 4 && t0.functionDeclarations.every((f) => f && ["get_weather", "look_up"].includes(f.name))) tools = [{ functionDeclarations: t0.functionDeclarations }];
       const payload = JSON.stringify({ systemInstruction: body.systemInstruction, contents: body.contents, generationConfig: body.generationConfig, tools });
       if (payload.length > 600000) return json({ error: "That request is too large" }, 413);
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {

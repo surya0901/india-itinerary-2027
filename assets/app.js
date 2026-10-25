@@ -324,7 +324,7 @@
     if (!libsPromise) {
       libsPromise = (window.d3 ? Promise.resolve() : loadScript("assets/vendor/d3.min.js"))
         .then(() => (window.topojson ? null : loadScript("assets/vendor/topojson-client.min.js")))
-        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js?v=8")));
+        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js?v=9")));
       libsPromise.catch(() => { libsPromise = null; });
     }
     return libsPromise;
@@ -858,13 +858,13 @@
       `${field("Your name", "gname", store.get("name") || "", "text", 'placeholder="So everyone knows who changed what"')}
        ${select("Model", "gmodel", c.model || GEMINI_MODELS[0][0], GEMINI_MODELS)}
        <p class="hint">Gemini 3.8 Flash is the best balance. Switch to Flash-Lite if replies are slow.</p>
-       <label class="check"><input type="checkbox" name="gweb" ${c.web !== false ? "checked" : ""}> Let the planner search the web for current info</label>`,
+       ${select("Looking things up", "gweb", c.web === "google" ? "google" : c.web === "off" || c.web === false ? "off" : "free", [["free", "Weather and Wikipedia (free)"], ["google", "Google Search (needs billing on the Gemini key)"], ["off", "Don't look things up"]])}`,
       `<button class="btn" type="button" data-dlg="clear">Clear chat history</button><div class="right"><button class="btn" type="submit" value="cancel" formnovalidate>Cancel</button><button class="btn btn-primary" type="button" data-dlg="save">Save</button></div>`);
     form.onclick = (e) => {
       const b = e.target.closest("[data-dlg]"); if (!b) return;
       if (b.dataset.dlg === "clear") { chatLog.length = 0; saveChat(); renderChat(); closeDialog(); toast("Chat cleared"); return; }
       if (fv("gname")) store.set("name", fv("gname"));
-      store.set("gemini", Object.assign({}, c, { model: fv("gmodel"), web: !!fv("gweb") }));
+      store.set("gemini", Object.assign({}, c, { model: fv("gmodel"), web: fv("gweb") }));
       const n = $("#chat-name"); if (n) n.value = store.get("name") || "";
       closeDialog(); toast("Settings saved");
       if (then) then();
@@ -1047,7 +1047,7 @@ The trip: Surya's family of about 15 people, India, Dec 31 2026 to Feb 5 2027. T
 Answer ONLY with a JSON object: {"reply": string, "operations": array, "show": array}. No code fences and no text before or after the object.
 - reply: a short, friendly chat message in plain words. Up to five sentences, or a short list with one item per line starting with "- ". No em dashes. When you propose operations, describe them as a proposal ("Here's the change" or "I can move..."), because the person taps Apply before anything changes.
 - You are chatting, so it's fine to ask a follow-up question, suggest ideas, or explain trains, Vande Bharat, bookings, costs and the places on the trip.
-- You can use Google Search for current or outside facts: train schedules and running days, weather, temple timings, opening hours, prices, festival dates, travel news. Say briefly where the facts came from. Facts you found online can go into the reply; only put them into operations if the person asked for that change, and mention they should be double checked on IRCTC or the official site.
+- Look things up when it helps: use get_weather for weather and look_up (Wikipedia) for places, temples, forts, festivals and food. If a Google Search tool is available, you may use it for other current facts. You don't have live train schedules or seat availability: for those, point people to the ticket's IRCTC, RailMitra or ixigo links. Say briefly where facts came from. Facts you looked up can go into the reply; only put them into operations if the person asked for that change.
 - show: pull up items from the plan as cards in the chat, when someone asks to see, show or find something, or when a card would help. Up to 6 of: {"type":"day","date":"YYYY-MM-DD"}, {"type":"ticket","id":"<ticket id>"}, {"type":"todo","id":"<to-do id>"}. Use an empty array otherwise.
 - operations: the edits to make. Use an empty array when nothing should change (questions, or when the request is unclear).
 - Never invent train numbers, flight numbers, timings or prices. If the request needs facts you don't have, leave those fields empty, make the rest of the change, and say in reply what needs checking on IRCTC or the airline site.
@@ -1113,51 +1113,126 @@ Formats:
     };
   }
 
+  // ---- free lookup tools the planner can call (no keys, no billing) ----
+  const FN_DECLS = [
+    { name: "get_weather", description: "Daily weather for a town or city in India. Dates within the next two weeks get the forecast. Later dates get the actual weather on the same dates last year, as a guide.", parameters: { type: "OBJECT", properties: { place: { type: "STRING", description: "Town or city, for example Jaipur" }, start: { type: "STRING", description: "First date, YYYY-MM-DD" }, end: { type: "STRING", description: "Last date, YYYY-MM-DD, at most 14 days after start" } }, required: ["place", "start"] } },
+    { name: "look_up", description: "Look up a place, temple, fort, festival, food or other topic on Wikipedia. Returns a short summary and a link.", parameters: { type: "OBJECT", properties: { query: { type: "STRING", description: "What to look up, for example Mehrangarh Fort" } }, required: ["query"] } },
+  ];
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function getJSON(u) { const r = await fetch(u); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }
+  async function toolWeather(a) {
+    const place = String(a.place || "").trim(); if (!place) return { result: { error: "No place given" } };
+    const g = await getJSON(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(place)}&count=1&countryCode=IN&language=en&format=json`);
+    const loc = (g.results || [])[0]; if (!loc) return { result: { error: `Couldn't find ${place} in India` } };
+    let st = isDate(a.start) ? a.start : isoDay(new Date()), en = isDate(a.end) ? a.end : st;
+    if (en < st) en = st;
+    if (dayDiff(parseDay(st), parseDay(en)) > 13) en = isoDay(addDays(parseDay(st), 13));
+    const common = `latitude=${loc.latitude}&longitude=${loc.longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Asia%2FKolkata`;
+    let basis, j;
+    if (dayDiff(new Date(), parseDay(st)) >= 0 && dayDiff(new Date(), parseDay(en)) <= 15) {
+      basis = "forecast";
+      j = await getJSON(`https://api.open-meteo.com/v1/forecast?${common}&start_date=${st}&end_date=${en}`);
+    } else {
+      const back = (iso) => { let d = parseDay(iso); while (d > addDays(new Date(), -6)) d = new Date(d.getFullYear() - 1, d.getMonth(), d.getDate()); return d; };
+      const bs = back(st), be = addDays(bs, dayDiff(parseDay(st), parseDay(en)));
+      basis = `actual weather on the same dates in ${bs.getFullYear()}, as a guide`;
+      j = await getJSON(`https://archive-api.open-meteo.com/v1/archive?${common}&start_date=${isoDay(bs)}&end_date=${isoDay(be)}`);
+    }
+    const d = j.daily || {};
+    const days = (d.time || []).map((t, i) => ({ date: t, high_c: d.temperature_2m_max[i], low_c: d.temperature_2m_min[i], rain_mm: d.precipitation_sum[i] }));
+    return { result: { place: [loc.name, loc.admin1].filter(Boolean).join(", "), basis, days }, source: { title: "Open-Meteo weather data", uri: "https://open-meteo.com/" } };
+  }
+  async function toolLookup(a) {
+    const q = String(a.query || "").trim(); if (!q) return { result: { error: "Nothing to look up" } };
+    const sr = await getJSON(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&srlimit=1&format=json&origin=*`);
+    const hit = ((sr.query || {}).search || [])[0]; if (!hit) return { result: { error: `Nothing found for ${q}` } };
+    const sum = await getJSON(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(hit.title.replace(/ /g, "_"))}`);
+    const link = ((sum.content_urls || {}).desktop || {}).page || `https://en.wikipedia.org/wiki/${encodeURIComponent(hit.title.replace(/ /g, "_"))}`;
+    return { result: { title: sum.title, summary: String(sum.extract || "").slice(0, 1500), url: link }, source: { title: `Wikipedia: ${sum.title}`, uri: link } };
+  }
+  async function runTool(call) {
+    try {
+      if (call.name === "get_weather") return await toolWeather(call.args || {});
+      if (call.name === "look_up") return await toolLookup(call.args || {});
+      return { result: { error: "Unknown tool" } };
+    } catch (e) { return { result: { error: "The lookup didn't work: " + e.message } }; }
+  }
+
   async function callGemini(c, text, history) {
-    const model = c.model || GEMINI_MODELS[0][0];
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+    let model = c.model || GEMINI_MODELS[0][0];
+    const urlFor = (m) => `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`;
     const now = new Date();
     const windows = data.tickets.map((t) => { const st = bookingState(t, now); return `- ${t.id}: ${tixLabel(t)} on ${t.date}: ${st.key === "booked" ? "booked" : st.at ? (st.at <= now ? "booking opened " : "booking opens ") + fmtIST(st.at) + " IST" : "can be booked any time"}`; }).join("\n");
     const sys = `${AI_RULES}\n\nToday is ${now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: IST })} in India.\nBooking windows worked out by the site (Indian Railways opens 60 days ahead at 8 AM IST; use these for any question about what to book and when):\n${windows}\n\nCurrent plan JSON:\n${JSON.stringify(data)}`;
     const contents = (history || []).map((m) => ({ role: m.role, parts: [{ text: m.text }] }));
     contents.push({ role: "user", parts: [{ text: `${store.get("name") || "A family member"} says: ${text}` }] });
-    const search = c.web !== false;
-    const makeBody = (withSearch) => withSearch
-      ? { systemInstruction: { parts: [{ text: sys }] }, contents, tools: [{ google_search: {} }], generationConfig: { temperature: 0.2 } }
-      : { systemInstruction: { parts: [{ text: sys }] }, contents, generationConfig: { responseMimeType: "application/json", temperature: 0.2 } };
+    // how the planner looks things up: free tools (default), Google Search (needs billing) or nothing
+    let tools = c.web === "google" ? "google" : c.web === "off" || c.web === false ? "off" : "free";
+    const sources = []; let suggest = "";
+    const bodyFor = () => {
+      const b = { systemInstruction: { parts: [{ text: sys }] }, contents, generationConfig: { temperature: 0.2 } };
+      if (tools === "google") b.tools = [{ google_search: {} }];
+      else if (tools === "free") b.tools = [{ functionDeclarations: FN_DECLS }];
+      else b.generationConfig.responseMimeType = "application/json";
+      return b;
+    };
     const send = (b) => W()
       ? fetch(W() + "/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.assign({ model }, b)) })
-      : fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": c.key }, body: JSON.stringify(b) });
-    let r;
-    try {
-      r = await send(makeBody(search));
-      // if search isn't available for this key or model, answer without it
-      if (search && !r.ok && r.status !== 429 && r.status !== 503) {
+      : fetch(urlFor(model), { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": c.key }, body: JSON.stringify(b) });
+
+    for (let round = 0; round < 4; round++) {
+      let r, busy = 0;
+      for (;;) {
+        try { r = await send(bodyFor()); } catch (e) { throw new Error("Couldn't reach Gemini. Check the internet connection and try again."); }
+        if (r.ok) break;
         const peek = await r.clone().text().catch(() => "");
-        if (r.status === 400 || /search|tool|ground/i.test(peek)) r = await send(makeBody(false));
+        if (r.status === 503 && /demand|overload|unavailable/i.test(peek) && busy < 3) {
+          busy++; await sleep(1000 * busy);
+          if (busy >= 2 && model !== "gemini-3.5-flash-lite") model = "gemini-3.5-flash-lite"; // busy: use the lighter model
+          continue;
+        }
+        if (tools === "google" && (r.status === 429 || r.status === 400 || r.status === 403)) { tools = "free"; continue; } // web search needs billing
+        if (tools === "free" && r.status === 400 && /function|tool|declar|schema/i.test(peek)) { tools = "off"; continue; }
+        break;
       }
+      if (!r.ok) {
+        let msg = ""; try { const raw = await r.json(); msg = typeof raw.error === "string" ? raw.error : ((raw.error || {}).message || ""); } catch (e) {}
+        if (r.status === 503) throw new Error(/demand|overload|unavailable/i.test(msg) || !msg ? "Gemini is very busy right now. Try again in a minute." : msg);
+        if (r.status === 400 && /api key/i.test(msg)) throw new Error("Gemini didn't accept the key. Open the planner settings and check it.");
+        if (r.status === 403) throw new Error("This key isn't allowed to use the Gemini API.");
+        if (r.status === 404) throw new Error(`The model ${model} isn't available. Pick another one in the planner settings.`);
+        if (r.status === 429) throw new Error(W() && msg && !/quota|exhausted/i.test(msg) ? msg : "Gemini's free limit is used up for now. Try again in a minute.");
+        throw new Error(`Gemini returned an error (${r.status}). ${msg.slice(0, 160)}`);
+      }
+      const j = await r.json();
+      const cand = (j.candidates || [])[0] || {};
+      const parts = (cand.content || {}).parts || [];
+      const gm = cand.groundingMetadata || {};
+      (gm.groundingChunks || []).forEach((g) => { if (g.web && /^https?:\/\//.test(g.web.uri || "")) sources.push({ title: String(g.web.title || g.web.uri).slice(0, 80), uri: g.web.uri }); });
+      if (gm.searchEntryPoint && gm.searchEntryPoint.renderedContent) suggest = gm.searchEntryPoint.renderedContent;
+      const calls = parts.filter((p) => p.functionCall);
+      if (calls.length && round < 3) {
+        contents.push({ role: "model", parts }); // keep the model's turn as is, including its signatures
+        const replies = [];
+        for (const p of calls) {
+          const out = await runTool(p.functionCall);
+          if (out.source) sources.push(out.source);
+          const fr = { name: p.functionCall.name, response: out.result };
+          if (p.functionCall.id) fr.id = p.functionCall.id;
+          replies.push({ functionResponse: fr });
+        }
+        contents.push({ role: "user", parts: replies });
+        continue;
+      }
+      const out = parts.filter((p) => !p.thought && p.text).map((p) => p.text).join("").trim();
+      if (!out) throw new Error("Gemini sent back an empty answer. Try saying it another way.");
+      const res = parsePlannerJSON(out);
+      const seen = new Set();
+      res.sources = sources.filter((x) => !seen.has(x.uri) && seen.add(x.uri)).slice(0, 5);
+      res.suggest = suggest;
+      return res;
     }
-    catch (e) { throw new Error("Couldn't reach Gemini. Check the internet connection and try again."); }
-    if (!r.ok) {
-      let msg = "", raw = {}; try { raw = await r.json(); msg = typeof raw.error === "string" ? raw.error : ((raw.error || {}).message || ""); } catch (e) {}
-      if (r.status === 503) throw new Error(msg || "The planner isn't fully set up yet.");
-      if (r.status === 400 && /api key/i.test(msg)) throw new Error("Gemini didn't accept the key. Open Planner settings and paste it again.");
-      if (r.status === 403) throw new Error("This key isn't allowed to use the Gemini API. In AI Studio, check the key is restricted to the Gemini API, or create a new one.");
-      if (r.status === 404) throw new Error(`The model ${model} isn't available to this key. Pick another one in Planner settings.`);
-      if (r.status === 429) throw new Error(W() && msg && !/quota|exhausted/i.test(msg) ? msg : "Gemini's free limit is used up for now. Try again in a minute.");
-      throw new Error(`Gemini returned an error (${r.status}). ${msg.slice(0, 160)}`);
-    }
-    const j = await r.json();
-    const cand = (j.candidates || [])[0] || {};
-    const parts = (cand.content || {}).parts || [];
-    const out = parts.filter((p) => !p.thought && p.text).map((p) => p.text).join("").trim();
-    if (!out) throw new Error("Gemini sent back an empty answer. Try saying it another way.");
-    const res = parsePlannerJSON(out);
-    const gm = cand.groundingMetadata || {};
-    const seen = new Set();
-    res.sources = (gm.groundingChunks || []).map((g) => g.web).filter((w) => w && /^https?:\/\//.test(w.uri || "") && !seen.has(w.uri) && seen.add(w.uri)).slice(0, 5).map((w) => ({ title: String(w.title || w.uri).slice(0, 80), uri: w.uri }));
-    res.suggest = (gm.searchEntryPoint && gm.searchEntryPoint.renderedContent) || "";
-    return res;
+    throw new Error("The planner got stuck looking things up. Try asking another way.");
   }
 
   function parsePlannerJSON(out) {
