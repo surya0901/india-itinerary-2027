@@ -315,7 +315,7 @@
     if (!libsPromise) {
       libsPromise = (window.d3 ? Promise.resolve() : loadScript("assets/vendor/d3.min.js"))
         .then(() => (window.topojson ? null : loadScript("assets/vendor/topojson-client.min.js")))
-        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js?v=4")));
+        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js?v=5")));
       libsPromise.catch(() => { libsPromise = null; });
     }
     return libsPromise;
@@ -817,17 +817,70 @@
   }
 
   // ---------- share and save ----------
+  // the Cloudflare Worker (if set) holds the keys; family members only need the family code
+  const W = () => String((data && data.meta.workerUrl) || "").replace(/\/+$/, "");
+  async function saveViaWorker(btn, force) {
+    const who = store.get("name") || "Family", code = store.get("familyCode");
+    if (!code) { openFamilyCode(() => openShare()); return; }
+    btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      const next = clone(data);
+      next.meta.updated = new Date().toISOString();
+      next.meta.updatedBy = who;
+      let r;
+      try { r = await fetch(W() + "/save", { method: "POST", headers: { "Content-Type": "application/json", "X-Family-Code": code }, body: JSON.stringify({ plan: next, who, baseUpdated: pub.meta.updated, force: !!force }) }); }
+      catch (e) { throw new Error("Couldn't reach the save service. Check the internet connection and try again."); }
+      const j = await r.json().catch(() => ({}));
+      if (r.status === 401) { store.del("familyCode"); throw new Error("That family code didn't work. Ask Surya for the right one and try again."); }
+      if (r.status === 409) {
+        btn.disabled = false; btn.textContent = "Save over their version"; btn.dataset.force = "1";
+        toast(`${j.updatedBy || "Someone"} saved a newer version. Press again to replace it, or discard your edits to load theirs.`);
+        return;
+      }
+      if (!r.ok) throw new Error(j.error || `Couldn't save (${r.status}). Try again in a minute.`);
+      data = next; pub = clone(next); store.del("draft"); store.del("draftBase");
+      closeDialog(); render(); hideBanner();
+      toast("Saved for everyone. The site updates in about a minute.");
+    } catch (err) {
+      btn.disabled = false; btn.textContent = "Save for everyone";
+      toast(err.message || "Couldn't save");
+    }
+  }
+  function openFamilyCode(then, withModel) {
+    const c = aiCfg();
+    openDialog("Family code", "Ask Surya for it. You only type it once on this phone or computer.",
+      `${field("Your name", "gname", store.get("name") || "", "text", 'placeholder="Shows who made a change"')}
+       ${field("Family code", "fcode", "", "password", `autocomplete="off" placeholder="${store.get("familyCode") ? "Saved. Leave empty to keep it" : "Type the family code"}"`)}
+       ${withModel ? select("Planner model", "gmodel", c.model || GEMINI_MODELS[0][0], GEMINI_MODELS) : ""}`,
+      `${store.get("familyCode") ? `<button class="btn btn-danger" type="button" data-dlg="forget">Forget the code</button>` : ""}<div class="right"><button class="btn" type="submit" value="cancel" formnovalidate>Cancel</button><button class="btn btn-primary" type="button" data-dlg="save">Save</button></div>`);
+    form.onclick = (e) => {
+      const b = e.target.closest("[data-dlg]"); if (!b) return;
+      if (b.dataset.dlg === "forget") { store.del("familyCode"); closeDialog(); toast("Family code removed from this device"); return; }
+      const code = fv("fcode") || store.get("familyCode");
+      if (!code) { toast("Type the family code first"); return; }
+      if (fv("gname")) store.set("name", fv("gname"));
+      store.set("familyCode", code);
+      if (withModel) store.set("gemini", Object.assign({}, c, { model: fv("gmodel") }));
+      closeDialog(); toast("Saved on this device");
+      if (then) then();
+    };
+  }
+
   function openShare() {
     const repo = repoInfo();
     const name = store.get("name") || "";
     const hasToken = !!store.get("token");
     openDialog("Share and save", dirty() ? "You have edits that only you can see right now." : "Everyone is looking at the same plan.",
-      `<div class="share-block"><h3>Save for everyone</h3>
+      `${W() ? `<div class="share-block"><h3>Save for everyone</h3>
+        <p>Everyone sees your version in about a minute.</p>
+        <div class="field-row">${field("Your name", "who", name, "text", 'placeholder="Shows who saved it"')}${store.get("familyCode") ? "" : field("Family code", "fcode", "", "password", 'autocomplete="off" placeholder="Ask Surya"')}</div>
+        <div class="toolbar"><button class="btn btn-primary" type="button" data-dlg="save-all">Save for everyone</button></div>
+      </div>` : `<div class="share-block"><h3>Save for everyone</h3>
         <p>Writes your version to GitHub. The site updates for everyone in about a minute.</p>
         <div class="field-row">${field("Your name", "who", name, "text", 'placeholder="Shows who saved it"')}${field("GitHub repository", "repo", repo, "text", 'placeholder="owner/repo"')}</div>
         ${hasToken ? `<p class="hint">An access key is saved on this device. <button class="btn-link" type="button" data-dlg="forget">Remove it</button></p>` : `${field("GitHub access key", "token", "", "password", 'autocomplete="off" placeholder="github_pat_..."')}<p class="hint">One-time setup. <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create a fine-grained key</a> for this repository only, with Contents set to Read and write. It stays on this device.</p>`}
         <div class="toolbar"><button class="btn btn-primary" type="button" data-dlg="github">Save for everyone</button></div>
-      </div>
+      </div>`}
       <div class="share-block"><h3>Send a link with your changes</h3>
         <p>Anyone who opens the link sees your version and can keep editing it. Nothing changes for others until someone saves for everyone.</p>
         <div class="toolbar"><button class="btn" type="button" data-dlg="link">Copy link</button></div>
@@ -845,7 +898,13 @@
       if (act === "link") copyLink();
       if (act === "download") { download("india-itinerary-2027.json", JSON.stringify(data, null, 1), "application/json"); toast("Plan file downloaded"); }
       if (act === "discard") { if (!confirmInline(b, "Click again to discard")) return; discard(); closeDialog(); toast("Back to the shared plan"); }
-      if (act === "github") saveToGitHub(b);
+      if (act === "github") saveToGitHub(b, b.dataset.force === "1");
+      if (act === "save-all") {
+        if (fv("who")) store.set("name", fv("who"));
+        if (fv("fcode")) store.set("familyCode", fv("fcode"));
+        if (!store.get("name")) { toast("Add your name first"); return; }
+        saveViaWorker(b, b.dataset.force === "1");
+      }
     };
     $("#file-in").onchange = async (e) => {
       const f = e.target.files[0]; if (!f) return;
@@ -882,7 +941,7 @@
       if (!force && remote.meta && pub.meta && remote.meta.updated !== pub.meta.updated) {
         btn.disabled = false; btn.textContent = "Save over their version";
         toast(`${remote.meta.updatedBy || "Someone"} saved a newer version. Press again to replace it, or discard your edits to load theirs.`);
-        btn.onclick = () => saveToGitHub(btn, true, opts);
+        btn.dataset.force = "1";
         return;
       }
       const next = clone(data);
@@ -1010,6 +1069,7 @@ Formats:
 - Route legs drive the globe. from and to are place ids; add a place first if needed.`;
 
   function openAISetup(then) {
+    if (W()) return openFamilyCode(then, true);
     const c = aiCfg();
     openDialog("Set up the planner", "Uses Google Gemini. One-time setup on each phone or computer.",
       `<p>The planner needs a Gemini API key. It's saved only in this browser and only ever sent to Google.</p>
@@ -1043,10 +1103,16 @@ Formats:
     contents.push({ role: "user", parts: [{ text: `${store.get("name") || "A family member"} asks: ${text}` }] });
     const body = { systemInstruction: { parts: [{ text: sys }] }, contents, generationConfig: { responseMimeType: "application/json", temperature: 0.2 } };
     let r;
-    try { r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": c.key }, body: JSON.stringify(body) }); }
+    try {
+      r = W()
+        ? await fetch(W() + "/ask", { method: "POST", headers: { "Content-Type": "application/json", "X-Family-Code": store.get("familyCode") || "" }, body: JSON.stringify(Object.assign({ model }, body)) })
+        : await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": c.key }, body: JSON.stringify(body) });
+    }
     catch (e) { throw new Error("Couldn't reach Gemini. Check the internet connection and try again."); }
     if (!r.ok) {
-      let msg = ""; try { msg = ((await r.json()).error || {}).message || ""; } catch (e) {}
+      let msg = "", raw = {}; try { raw = await r.json(); msg = typeof raw.error === "string" ? raw.error : ((raw.error || {}).message || ""); } catch (e) {}
+      if (r.status === 401 && msg === "wrong_code") { store.del("familyCode"); throw new Error("That family code didn't work. Ask Surya for the right one, then try again."); }
+      if (r.status === 503) throw new Error(msg || "The planner isn't fully set up yet.");
       if (r.status === 400 && /api key/i.test(msg)) throw new Error("Gemini didn't accept the key. Open Planner settings and paste it again.");
       if (r.status === 403) throw new Error("This key isn't allowed to use the Gemini API. In AI Studio, check the key is restricted to the Gemini API, or create a new one.");
       if (r.status === 404) throw new Error(`The model ${model} isn't available to this key. Pick another one in Planner settings.`);
@@ -1154,7 +1220,7 @@ Formats:
   async function askPlanner(text) {
     text = (text || "").trim(); if (!text) { $("#ask-text").focus(); return; }
     const c = aiCfg();
-    if (!c.key) { openAISetup(() => askPlanner(text)); return; }
+    if (W() ? !store.get("familyCode") : !c.key) { openAISetup(() => askPlanner(text)); return; }
     const box = $("#ask"), go = $("#ask-go");
     box.classList.add("is-busy"); go.disabled = true; go.textContent = "Thinking…";
     try {
@@ -1171,7 +1237,7 @@ Formats:
 
   function showPlannerResult(text, reply, ops, preview) {
     const hasChanges = preview.lines.length > 0;
-    const canSave = !!store.get("token");
+    const canSave = W() ? true : !!store.get("token");
     openDialog(hasChanges ? "Check these changes" : "Planner", `You asked: ${text}`,
       `${reply ? `<p class="ai-reply">${esc(reply)}</p>` : ""}
        ${hasChanges ? `<div class="share-block"><h3>What will change</h3><ul class="change-list">${preview.lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul></div>` : ""}
@@ -1180,19 +1246,25 @@ Formats:
       hasChanges
         ? `<div class="right"><button class="btn" type="submit" value="cancel" formnovalidate>Don't change</button>${canSave ? `<button class="btn" type="button" data-dlg="apply-save">Apply and save for everyone</button>` : ""}<button class="btn btn-primary" type="button" data-dlg="apply">Apply</button></div>`
         : `<div class="right"><button class="btn btn-primary" type="submit" value="cancel">Done</button></div>`);
+    let applied = false, before = null;
     form.onclick = (e) => {
       const b = e.target.closest("[data-dlg]"); if (!b) return;
-      const before = clone(data);
-      commit((d) => { applyOps(d, ops); });
-      const undo = () => { commit((d) => { Object.keys(d).forEach((k) => delete d[k]); Object.assign(d, clone(before)); }); hideBanner(); toast("Undone"); };
+      if (!applied) {
+        before = clone(data);
+        commit((d) => { applyOps(d, ops); });
+        applied = true;
+        const undo = () => { commit((d) => { Object.keys(d).forEach((k) => delete d[k]); Object.assign(d, clone(before)); }); hideBanner(); toast("Undone"); };
+        showBanner(`The planner made ${preview.lines.length} ${preview.lines.length === 1 ? "change" : "changes"}. They're only on this device until you save for everyone.`, [
+          ["Undo", undo], ["Save for everyone", () => { hideBanner(); openShare(); }],
+        ]);
+      }
       if (b.dataset.dlg === "apply-save") {
-        saveToGitHub(b, false, { who: store.get("name") || "Planner", repo: repoInfo(), token: store.get("token") });
+        const force = b.dataset.force === "1";
+        if (W()) saveViaWorker(b, force);
+        else saveToGitHub(b, force, { who: store.get("name") || "Planner", repo: repoInfo(), token: store.get("token") });
         return;
       }
       closeDialog();
-      showBanner(`The planner made ${preview.lines.length} ${preview.lines.length === 1 ? "change" : "changes"}. They're only on this device until you save for everyone.`, [
-        ["Undo", undo], ["Save for everyone", () => { hideBanner(); openShare(); }],
-      ]);
     };
   }
 

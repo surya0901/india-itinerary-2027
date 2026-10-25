@@ -20,7 +20,15 @@ Our family plan for India, Dec 31, 2026 to Feb 5, 2027: Chennai, Kerala, Salem, 
 
 The box under the countdown takes plain requests like "move Trichy to Jan 20 and 21", "we booked 22639, PNR 4521234567" or "what do we need to book this week?". Google Gemini reads the whole plan, proposes specific edits, and the site shows exactly what will change before anything happens. Press **Apply** (and **Undo** if needed), then save for everyone as usual.
 
-Each phone or computer needs a Gemini API key once, from https://aistudio.google.com/apikey. The key stays in that browser and is sent only to Google. Create it in a Google Cloud project without billing turned on, so the worst case is hitting the free daily limit, never a bill. Don't put a key in this repository: it's public.
+Family members only need the **family code** (ask Surya). The keys live in a small Cloudflare Worker (`worker/worker.js`), never in this public repository:
+
+- `POST /ask` forwards planner requests to Gemini with the shared key.
+- `POST /save` writes `data/trip.json` to this repository, so "Save for everyone" works without a GitHub key on each phone.
+- Both require the family code and only accept requests from the trip site.
+
+Worker secrets (Cloudflare dashboard, the Worker's Settings, Variables and Secrets): `GEMINI_API_KEY`, `GITHUB_TOKEN` (fine-grained, this repository only, Contents read and write) and `FAMILY_CODE`. The Worker's address goes in `meta.workerUrl` in `data/trip.json`.
+
+Without a Worker, the site falls back to asking each device for its own Gemini key.
 
 ## Editing
 
