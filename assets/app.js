@@ -315,7 +315,7 @@
     if (!libsPromise) {
       libsPromise = (window.d3 ? Promise.resolve() : loadScript("assets/vendor/d3.min.js"))
         .then(() => (window.topojson ? null : loadScript("assets/vendor/topojson-client.min.js")))
-        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js")));
+        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js?v=3")));
       libsPromise.catch(() => { libsPromise = null; });
     }
     return libsPromise;
