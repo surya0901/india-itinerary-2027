@@ -324,7 +324,7 @@
     if (!libsPromise) {
       libsPromise = (window.d3 ? Promise.resolve() : loadScript("assets/vendor/d3.min.js"))
         .then(() => (window.topojson ? null : loadScript("assets/vendor/topojson-client.min.js")))
-        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js?v=6")));
+        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js?v=7")));
       libsPromise.catch(() => { libsPromise = null; });
     }
     return libsPromise;
@@ -1114,7 +1114,8 @@ Formats:
     const model = c.model || GEMINI_MODELS[0][0];
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
     const now = new Date();
-    const sys = `${AI_RULES}\n\nToday is ${now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: IST })} in India.\nCurrent plan JSON:\n${JSON.stringify(data)}`;
+    const windows = data.tickets.map((t) => { const st = bookingState(t, now); return `- ${t.id}: ${tixLabel(t)} on ${t.date}: ${st.key === "booked" ? "booked" : st.at ? (st.at <= now ? "booking opened " : "booking opens ") + fmtIST(st.at) + " IST" : "can be booked any time"}`; }).join("\n");
+    const sys = `${AI_RULES}\n\nToday is ${now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: IST })} in India.\nBooking windows worked out by the site (Indian Railways opens 60 days ahead at 8 AM IST; use these for any question about what to book and when):\n${windows}\n\nCurrent plan JSON:\n${JSON.stringify(data)}`;
     const contents = (history || []).map((m) => ({ role: m.role, parts: [{ text: m.text }] }));
     contents.push({ role: "user", parts: [{ text: `${store.get("name") || "A family member"} says: ${text}` }] });
     const body = { systemInstruction: { parts: [{ text: sys }] }, contents, generationConfig: { responseMimeType: "application/json", temperature: 0.2 } };
