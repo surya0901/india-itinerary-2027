@@ -132,7 +132,7 @@ h1 {
 .banner p { flex: 1 1 320px; }
 
 /* Hero: one sentence that says what matters now */
-.hero { padding-block: 20px 28px; display: grid; gap: 14px; }
+.hero { padding-block: 20px 20px; display: grid; gap: 14px; }
 .hero-line {
   font-family: var(--f-display);
   font-size: clamp(1.5rem, 3.4vw, 2.35rem);
@@ -152,6 +152,24 @@ h1 {
 .hero-next .k { color: var(--muted); font-size: var(--step--1); }
 .hero-next .v { min-width: 0; }
 .hero-next .v b { font-weight: 700; }
+
+/* Ask the planner */
+.ask { padding-bottom: 24px; display: grid; gap: 8px; }
+.ask-label { font-weight: 700; }
+.ask-row { display: flex; gap: 8px; max-width: 760px; }
+.ask-row input {
+  flex: 1; min-width: 0; min-height: 50px; padding: 10px 14px;
+  border: 1.5px solid var(--line); border-radius: var(--r-s); background: var(--surface);
+}
+.ask-row input:focus { outline: none; border-color: var(--coach); box-shadow: 0 0 0 3px color-mix(in srgb, var(--coach) 22%, transparent); }
+.ask-row .btn { min-height: 50px; min-width: 88px; }
+.ask.is-busy input { opacity: 0.6; }
+.ask-foot { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; max-width: 760px; font-size: var(--step--1); color: var(--muted); }
+.ask-chip { border: 1px solid var(--line); background: none; color: var(--ink); border-radius: 999px; padding: 3px 11px; min-height: 32px; cursor: pointer; font-size: var(--step--1); }
+.ask-chip:hover { border-color: var(--coach); color: var(--coach); }
+.ask-settings { margin-left: auto; font-size: var(--step--1); }
+.ai-reply { font-size: var(--step-1); line-height: 1.45; }
+.change-list, .steps-list { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
 
 /* Tabs */
 .tabs {
@@ -469,7 +487,7 @@ dialog::backdrop { background: rgb(10 18 22 / 0.55); }
 }
 
 @media print {
-  .masthead-actions, .tabs, .banner, .toolbar, .day-foot, .stub-side select, .stub-side input, .stub-side .btn, .footer, .chips, .todo-add { display: none !important; }
+  .masthead-actions, .ask, .tabs, .banner, .toolbar, .day-foot, .stub-side select, .stub-side input, .stub-side .btn, .footer, .chips, .todo-add { display: none !important; }
   body { background: #fff; color: #000; font-size: 12pt; }
   .day-card, .stub, .todo { break-inside: avoid; }
   main { padding: 0; }

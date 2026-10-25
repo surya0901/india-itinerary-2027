@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
-  <link rel="stylesheet" href="assets/style.css?v=3">
+  <link rel="stylesheet" href="assets/style.css?v=4">
 </head>
 <body>
   <a class="skip" href="#main">Skip to the plan</a>
@@ -36,6 +36,22 @@
   <div class="banner" id="banner" hidden></div>
 
   <section class="wrap hero" id="hero" aria-live="polite"></section>
+
+  <form class="wrap ask" id="ask" autocomplete="off">
+    <label class="ask-label" for="ask-text">Change the plan by typing what you want</label>
+    <div class="ask-row">
+      <input id="ask-text" type="text" enterkeyhint="send" placeholder="For example: move Trichy to Jan 20 and 21">
+      <button class="btn btn-primary" id="ask-go" type="submit">Ask</button>
+    </div>
+    <div class="ask-foot">
+      <span class="ask-try">Try</span>
+      <button type="button" class="ask-chip" data-example="We booked 22639, PNR 4521234567">We booked 22639</button>
+      <button type="button" class="ask-chip" data-example="Add dinner at Saravana Bhavan on Jan 2 at 7 PM">Add a dinner on Jan 2</button>
+      <button type="button" class="ask-chip" data-example="Only 12 people are going to Rajasthan">12 people for Rajasthan</button>
+      <button type="button" class="ask-chip" data-example="What do we need to book in the next two weeks?">What to book soon?</button>
+      <button type="button" class="btn-link ask-settings" id="ask-settings">Planner settings</button>
+    </div>
+  </form>
 
   <nav class="tabs" aria-label="Sections">
     <div class="wrap tabs-row" role="tablist">
@@ -65,6 +81,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="assets/app.js?v=3"></script>
+  <script src="assets/app.js?v=4"></script>
 </body>
 </html>

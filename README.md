@@ -12,8 +12,15 @@ Our family plan for India, Dec 31, 2026 to Feb 5, 2027: Chennai, Kerala, Salem, 
 - **Tickets** for every train, Vande Bharat, flight, darshan, stay and activity, with the price, the date booking opens (in India time and your own time), booking links, status and PNR.
 - **To-do** list with who does what and by when. Unbooked tickets show up here on their own.
 - **Budget** that adds everything up for the group. Prices switch between rupees and dollars at the live exchange rate: use the switch at the top, or tap any single price.
+- **Change the plan by typing**: ask Gemini for a change and preview it before it applies.
 - **Good to know**: IRCTC rules, booking for 15 people, which class to pick, Tirumala darshan rules and links.
 - Calendar files you can add to your phone: the whole trip, or reminders for when each booking opens.
+
+## Change the plan by typing
+
+The box under the countdown takes plain requests like "move Trichy to Jan 20 and 21", "we booked 22639, PNR 4521234567" or "what do we need to book this week?". Google Gemini reads the whole plan, proposes specific edits, and the site shows exactly what will change before anything happens. Press **Apply** (and **Undo** if needed), then save for everyone as usual.
+
+Each phone or computer needs a Gemini API key once, from https://aistudio.google.com/apikey. The key stays in that browser and is sent only to Google. Create it in a Google Cloud project without billing turned on, so the worst case is hitting the free daily limit, never a bill. Don't put a key in this repository: it's public.
 
 ## Editing
 

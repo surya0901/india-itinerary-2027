@@ -315,7 +315,7 @@
     if (!libsPromise) {
       libsPromise = (window.d3 ? Promise.resolve() : loadScript("assets/vendor/d3.min.js"))
         .then(() => (window.topojson ? null : loadScript("assets/vendor/topojson-client.min.js")))
-        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js?v=3")));
+        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js?v=4")));
       libsPromise.catch(() => { libsPromise = null; });
     }
     return libsPromise;
@@ -863,9 +863,9 @@
   }
   const b64utf8 = (str) => { const bytes = new TextEncoder().encode(str); let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(bin); };
   const unb64utf8 = (b) => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\n/g, "")), (c) => c.charCodeAt(0)));
-  async function saveToGitHub(btn, force) {
-    const who = fv("who"), repo = fv("repo");
-    const token = store.get("token") || fv("token");
+  async function saveToGitHub(btn, force, opts) {
+    const who = opts ? opts.who : fv("who"), repo = opts ? opts.repo : fv("repo");
+    const token = store.get("token") || (opts ? "" : fv("token"));
     if (!who) { toast("Add your name first"); return; }
     if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) { toast("Repository should look like owner/repo"); return; }
     if (!token) { toast("Paste a GitHub access key first"); return; }
@@ -882,7 +882,7 @@
       if (!force && remote.meta && pub.meta && remote.meta.updated !== pub.meta.updated) {
         btn.disabled = false; btn.textContent = "Save over their version";
         toast(`${remote.meta.updatedBy || "Someone"} saved a newer version. Press again to replace it, or discard your edits to load theirs.`);
-        btn.onclick = () => saveToGitHub(btn, true);
+        btn.onclick = () => saveToGitHub(btn, true, opts);
         return;
       }
       const next = clone(data);
@@ -959,6 +959,243 @@
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
+  // ---------- ask the planner (Gemini) ----------
+  // People type a change in plain words. Gemini answers with a short reply and a list of
+  // small edit operations, which we check, preview, and only apply when someone confirms.
+  const GEMINI_MODELS = [["gemini-3.8-flash", "Gemini 3.8 Flash (recommended)"], ["gemini-3.5-flash-lite", "Gemini 3.5 Flash-Lite (fastest)"], ["gemini-4-argon", "Gemini 4 Argon (most capable, slower)"]];
+  const aiCfg = () => store.get("gemini") || {};
+  const chat = []; // follow-up context for this visit only
+
+  const AI_RULES = `You edit a shared family trip plan website and answer questions about it.
+The trip: Surya's family of about 15 people, India, Dec 31 2026 to Feb 5 2027. They travel mostly by Indian Railways trains and Vande Bharat, with home base in Salem, Tamil Nadu. Elders are travelling, so keep plans realistic.
+
+Answer ONLY with a JSON object: {"reply": string, "operations": array}.
+- reply: one to three short, plain sentences for the family saying what you changed, or answering the question. No em dashes.
+- operations: the edits to make. Use an empty array when nothing should change (questions, or when the request is unclear).
+- Never invent train numbers, flight numbers, timings or prices. If the request needs facts you don't have, leave those fields empty, make the rest of the change, and say in reply what needs checking on IRCTC or the airline site.
+- If a request is ambiguous, ask one short question in reply and make no operations.
+- Don't delete anything unless the request clearly asks for it. Keep existing ids.
+
+Allowed operations (exact shapes):
+{"op":"update_day","date":"YYYY-MM-DD","fields":{"place"?,"trip"?,"summary"?,"note"?}}
+{"op":"set_day_steps","date":"YYYY-MM-DD","steps":[{"time":"8:10 AM","text":"...","ref"?:"16788","alt"?:"backup option","booking"?:true}]}
+{"op":"add_day","day":{"date","trip","place","summary","steps","note"}}
+{"op":"delete_day","date":"YYYY-MM-DD"}
+{"op":"swap_days","a":"YYYY-MM-DD","b":"YYYY-MM-DD"}   (swaps everything planned on two dates)
+{"op":"add_ticket","ticket":{"kind","trip","date","number","name","from","to","dep","arr","class","cost","costType","costConfirmed","costNote","status","pnr","note","alt","links","people","originDate","opensAt"}}
+{"op":"update_ticket","id":"...","fields":{...same keys as add_ticket}}
+{"op":"delete_ticket","id":"..."}
+{"op":"add_todo","todo":{"text","owner","due","link"?}}
+{"op":"update_todo","id":"...","fields":{"text"?,"owner"?,"due"?,"done"?,"link"?}}
+{"op":"delete_todo","id":"..."}
+{"op":"add_extra","extra":{"trip","label","cost","costType"}}
+{"op":"update_extra","id":"...","fields":{...}}
+{"op":"delete_extra","id":"..."}
+{"op":"set_meta","fields":{"title"?,"start"?,"end"?,"defaultPeople"?,"usdRate"?,"rateMode"?}}
+{"op":"set_people","people":["Surya","Brother","Mom","Everyone"]}
+{"op":"add_trip","trip":{"id","name","color"}}
+{"op":"update_trip","id":"...","fields":{"name"?,"color"?}}
+{"op":"add_place","id":"short-id","place":{"name","lat","lon"}}
+{"op":"add_leg","leg":{"date","from","to","mode","ref","label"},"index"?:number}
+{"op":"update_leg","index":number,"fields":{...}}
+{"op":"delete_leg","index":number}
+
+Formats:
+- Dates are YYYY-MM-DD. Day step times read like "8:10 AM", "Evening" or "Night". Ticket dep and arr use 24 hour time like "20:55", with " +1" when it arrives the next day.
+- Ticket kind is train, flight, darshan, stay or activity. status is todo, waitlist or booked. costType is perPerson or total. cost is a number in rupees.
+- opensAt: leave it out for trains (the site works out the 60 day rule itself; set originDate if the train starts its run on an earlier date than the boarding date), use "now" for things bookable any time, or an ISO time ending in +05:30.
+- A step that is a booking gets "booking": true and the ticket number in "ref".
+- trip must be one of the existing trip ids. owner must be one of the people.
+- When moving a trip to other dates, update the days on both the old and new dates, and move the related tickets, to-dos and route legs too. Days left empty should become ordinary home days in Salem (trip "home", place "Salem").
+- Route legs drive the globe. from and to are place ids; add a place first if needed.`;
+
+  function openAISetup(then) {
+    const c = aiCfg();
+    openDialog("Set up the planner", "Uses Google Gemini. One-time setup on each phone or computer.",
+      `<p>The planner needs a Gemini API key. It's saved only in this browser and only ever sent to Google.</p>
+       <ol class="steps-list">
+         <li>Open <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> and sign in with a Google account.</li>
+         <li>Choose <b>Create API key</b>. Use a project without billing turned on, so the worst that can happen is a daily limit, never a bill.</li>
+         <li>Copy the key and paste it below.</li>
+       </ol>
+       ${field("Your name", "gname", store.get("name") || "", "text", 'placeholder="Shows who asked for a change"')}
+       ${field("Gemini API key", "gkey", "", "password", `autocomplete="off" placeholder="${c.key ? "Saved. Leave empty to keep it" : "Paste the key"}"`)}
+       ${select("Model", "gmodel", c.model || GEMINI_MODELS[0][0], GEMINI_MODELS)}`,
+      `${c.key ? `<button class="btn btn-danger" type="button" data-dlg="forget">Remove key</button>` : ""}<div class="right"><button class="btn" type="submit" value="cancel" formnovalidate>Cancel</button><button class="btn btn-primary" type="button" data-dlg="save">Save</button></div>`);
+    form.onclick = (e) => {
+      const b = e.target.closest("[data-dlg]"); if (!b) return;
+      if (b.dataset.dlg === "forget") { store.del("gemini"); closeDialog(); toast("Gemini key removed from this device"); return; }
+      const key = fv("gkey") || c.key;
+      if (!key) { toast("Paste a Gemini API key first"); return; }
+      if (fv("gname")) store.set("name", fv("gname"));
+      store.set("gemini", { key, model: fv("gmodel") });
+      closeDialog(); toast("The planner is ready");
+      if (then) then();
+    };
+  }
+
+  async function callGemini(c, text) {
+    const model = c.model || GEMINI_MODELS[0][0];
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+    const now = new Date();
+    const sys = `${AI_RULES}\n\nToday is ${now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: IST })} in India.\nCurrent plan JSON:\n${JSON.stringify(data)}`;
+    const contents = chat.map((m) => ({ role: m.role, parts: [{ text: m.text }] }));
+    contents.push({ role: "user", parts: [{ text: `${store.get("name") || "A family member"} asks: ${text}` }] });
+    const body = { systemInstruction: { parts: [{ text: sys }] }, contents, generationConfig: { responseMimeType: "application/json", temperature: 0.2 } };
+    let r;
+    try { r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": c.key }, body: JSON.stringify(body) }); }
+    catch (e) { throw new Error("Couldn't reach Gemini. Check the internet connection and try again."); }
+    if (!r.ok) {
+      let msg = ""; try { msg = ((await r.json()).error || {}).message || ""; } catch (e) {}
+      if (r.status === 400 && /api key/i.test(msg)) throw new Error("Gemini didn't accept the key. Open Planner settings and paste it again.");
+      if (r.status === 403) throw new Error("This key isn't allowed to use the Gemini API. In AI Studio, check the key is restricted to the Gemini API, or create a new one.");
+      if (r.status === 404) throw new Error(`The model ${model} isn't available to this key. Pick another one in Planner settings.`);
+      if (r.status === 429) throw new Error("Gemini's free limit is used up for now. Try again in a minute.");
+      throw new Error(`Gemini returned an error (${r.status}). ${msg.slice(0, 160)}`);
+    }
+    const j = await r.json();
+    const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
+    const out = parts.filter((p) => !p.thought && p.text).map((p) => p.text).join("").trim();
+    if (!out) throw new Error("Gemini sent back an empty answer. Try saying it another way.");
+    try { return JSON.parse(out.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")); }
+    catch (e) { return { reply: out, operations: [] }; }
+  }
+
+  // apply edit operations to a plan object; returns readable change lines and problems
+  const KEYS = {
+    day: ["place", "trip", "summary", "note"],
+    ticket: ["kind", "trip", "date", "number", "name", "from", "to", "dep", "arr", "class", "cost", "costType", "costConfirmed", "costNote", "status", "pnr", "note", "alt", "links", "people", "originDate", "opensAt"],
+    todo: ["text", "owner", "due", "done", "link"],
+    extra: ["trip", "label", "cost", "costType"],
+    meta: ["title", "start", "end", "defaultPeople", "usdRate", "rateMode"],
+    trip: ["name", "color"],
+    leg: ["date", "from", "to", "mode", "ref", "label"],
+  };
+  const NICE = { place: "where", summary: "summary", trip: "part of", note: "note", dep: "leaves", arr: "arrives", cost: "price", costType: "price type", costConfirmed: "price confirmed", status: "status", pnr: "PNR", text: "text", owner: "who", due: "due", done: "done", defaultPeople: "people", usdRate: "rate", rateMode: "rate mode", originDate: "train start date", opensAt: "booking opens" };
+  const pick = (o, keys) => Object.fromEntries(Object.entries(o || {}).filter(([k]) => keys.includes(k)));
+  const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
+  const showV = (v) => (v === "" || v == null ? "nothing" : typeof v === "object" ? (Array.isArray(v) ? `${v.length} items` : "updated") : `"${v}"`);
+  const cleanSteps = (steps) => (Array.isArray(steps) ? steps : []).filter((x) => x && x.text).map((x) => { const st = { time: String(x.time || ""), text: String(x.text) }; if (x.ref) st.ref = String(x.ref); if (x.alt) st.alt = String(x.alt); if (x.booking || x.ref) st.booking = true; return st; });
+  const cleanLinks = (links) => (Array.isArray(links) ? links : []).filter((l) => l && /^https?:\/\//.test(l.url || "")).map((l) => ({ label: String(l.label || "Link"), url: l.url }));
+  function applyOps(d, ops) {
+    const lines = [], problems = [];
+    const dayName = (iso) => fmtDay(iso);
+    const STATUS = { todo: "not booked", waitlist: "waitlisted", booked: "booked" };
+    const val = (k, v) => showV(k === "status" && STATUS[v] ? STATUS[v] : v);
+    const changed = (label, before, after) => Object.keys(after).forEach((k) => { if (JSON.stringify(before[k]) !== JSON.stringify(after[k])) lines.push(`${label}: ${NICE[k] || k} from ${val(k, before[k])} to ${val(k, after[k])}`); });
+    const findDay = (iso) => d.days.find((x) => x.date === iso);
+    const tripOk = (id) => !id || d.trips.some((t) => t.id === id);
+    const fixTicket = (t) => { if ("cost" in t) t.cost = Number(t.cost) || 0; if ("people" in t) { if (t.people) t.people = Number(t.people); else delete t.people; } if ("links" in t) t.links = cleanLinks(t.links); return t; };
+    (Array.isArray(ops) ? ops : []).forEach((o) => {
+      try {
+        switch (o && o.op) {
+          case "update_day": {
+            const k = findDay(o.date); if (!k) { problems.push(`No day on ${o.date} to change`); break; }
+            const f = pick(o.fields, KEYS.day); if (!tripOk(f.trip)) { problems.push(`Unknown trip "${f.trip}"`); delete f.trip; }
+            changed(dayName(o.date), k, f); Object.assign(k, f); break;
+          }
+          case "set_day_steps": {
+            const k = findDay(o.date); if (!k) { problems.push(`No day on ${o.date}`); break; }
+            k.steps = cleanSteps(o.steps); lines.push(`${dayName(o.date)}: timings rewritten (${k.steps.length} ${k.steps.length === 1 ? "line" : "lines"})`); break;
+          }
+          case "add_day": {
+            const nd = o.day || {}; if (!isDate(nd.date)) { problems.push("A new day had no valid date"); break; }
+            let k = findDay(nd.date); const isNew = !k;
+            if (!k) { k = { date: nd.date, trip: "home", place: "Salem", summary: "", steps: [], note: "" }; d.days.push(k); }
+            const f = pick(nd, KEYS.day); if (!tripOk(f.trip)) delete f.trip;
+            Object.assign(k, f); if (nd.steps) k.steps = cleanSteps(nd.steps);
+            d.days.sort((a, b) => a.date.localeCompare(b.date));
+            if (nd.date < d.meta.start) d.meta.start = nd.date; if (nd.date > d.meta.end) d.meta.end = nd.date;
+            lines.push(`${dayName(nd.date)}: ${isNew ? "added" : "replaced"} (${k.place})`); break;
+          }
+          case "delete_day": { const before = d.days.length; d.days = d.days.filter((x) => x.date !== o.date); if (d.days.length < before) lines.push(`${dayName(o.date)}: removed`); else problems.push(`No day on ${o.date}`); break; }
+          case "swap_days": {
+            const a = findDay(o.a), b = findDay(o.b); if (!a || !b) { problems.push(`Can't swap ${o.a} and ${o.b}`); break; }
+            const ka = clone(a), kb = clone(b); Object.assign(a, kb, { date: ka.date }); Object.assign(b, ka, { date: kb.date });
+            lines.push(`${dayName(o.a)} and ${dayName(o.b)}: swapped`); break;
+          }
+          case "add_ticket": {
+            const t = fixTicket(pick(o.ticket, KEYS.ticket)); if (!t.name || !isDate(t.date)) { problems.push("A new ticket needed a name and date"); break; }
+            if (!tripOk(t.trip)) t.trip = "travel";
+            const nt = Object.assign({ id: uid("t"), kind: "train", trip: "travel", number: "", from: "", to: "", dep: "", arr: "", class: "", cost: 0, costType: "perPerson", costConfirmed: false, costNote: "", status: "todo", pnr: "", note: "", links: [] }, t);
+            if (nt.kind === "train" && !nt.links.length) nt.links = [{ label: "Book on IRCTC", url: "https://www.irctc.co.in/nget/train-search" }];
+            d.tickets.push(nt); lines.push(`New ticket: ${tixLabel(nt)} on ${dayName(nt.date)}`); break;
+          }
+          case "update_ticket": {
+            const k = d.tickets.find((x) => x.id === o.id); if (!k) { problems.push(`No ticket with id ${o.id}`); break; }
+            const f = fixTicket(pick(o.fields, KEYS.ticket)); changed(`Ticket ${tixLabel(k)}`, k, f); Object.assign(k, f); break;
+          }
+          case "delete_ticket": { const k = d.tickets.find((x) => x.id === o.id); if (!k) { problems.push(`No ticket with id ${o.id}`); break; } d.tickets = d.tickets.filter((x) => x !== k); lines.push(`Ticket removed: ${tixLabel(k)}`); break; }
+          case "add_todo": {
+            const t = pick(o.todo, KEYS.todo); if (!t.text) { problems.push("A new to-do had no text"); break; }
+            if (!d.people.includes(t.owner)) t.owner = d.people.includes("Everyone") ? "Everyone" : d.people[0];
+            d.todos.push(Object.assign({ id: uid("d"), due: "", done: false }, t)); lines.push(`New to-do for ${t.owner}: ${t.text}`); break;
+          }
+          case "update_todo": { const k = d.todos.find((x) => x.id === o.id); if (!k) { problems.push(`No to-do with id ${o.id}`); break; } const f = pick(o.fields, KEYS.todo); changed(`To-do "${k.text}"`, k, f); Object.assign(k, f); break; }
+          case "delete_todo": { const k = d.todos.find((x) => x.id === o.id); if (!k) { problems.push(`No to-do with id ${o.id}`); break; } d.todos = d.todos.filter((x) => x !== k); lines.push(`To-do removed: ${k.text}`); break; }
+          case "add_extra": { const x = pick(o.extra, KEYS.extra); if (!x.label) { problems.push("A new cost had no name"); break; } x.cost = Number(x.cost) || 0; d.extras.push(Object.assign({ id: uid("x"), costType: "perPerson", trip: "home" }, x)); lines.push(`New cost: ${x.label}, ${inr(x.cost)}`); break; }
+          case "update_extra": { const k = d.extras.find((x) => x.id === o.id); if (!k) { problems.push(`No cost with id ${o.id}`); break; } const f = pick(o.fields, KEYS.extra); if ("cost" in f) f.cost = Number(f.cost) || 0; changed(`Cost "${k.label}"`, k, f); Object.assign(k, f); break; }
+          case "delete_extra": { const k = d.extras.find((x) => x.id === o.id); if (!k) { problems.push(`No cost with id ${o.id}`); break; } d.extras = d.extras.filter((x) => x !== k); lines.push(`Cost removed: ${k.label}`); break; }
+          case "set_meta": { const f = pick(o.fields, KEYS.meta); if ("defaultPeople" in f) f.defaultPeople = Math.max(1, Number(f.defaultPeople) || 1); if ("usdRate" in f) f.usdRate = Number(f.usdRate) || d.meta.usdRate; changed("Trip settings", d.meta, f); Object.assign(d.meta, f); break; }
+          case "set_people": { const p = (o.people || []).map(String).filter(Boolean); if (!p.length) break; lines.push(`Names: ${p.join(", ")}`); d.people = Array.from(new Set(p)); break; }
+          case "add_trip": { const t = o.trip || {}; if (!t.id || !t.name || d.trips.some((x) => x.id === t.id)) { problems.push("Couldn't add that trip"); break; } d.trips.push({ id: String(t.id), name: String(t.name), color: /^#[0-9a-f]{6}$/i.test(t.color || "") ? t.color : "#67737A" }); lines.push(`New trip: ${t.name}`); break; }
+          case "update_trip": { const k = d.trips.find((x) => x.id === o.id); if (!k) { problems.push(`No trip ${o.id}`); break; } const f = pick(o.fields, KEYS.trip); if (f.color && !/^#[0-9a-f]{6}$/i.test(f.color)) delete f.color; changed(`Trip ${k.name}`, k, f); Object.assign(k, f); break; }
+          case "add_place": { const p = o.place || {}; if (!o.id || !p.name || isNaN(+p.lat) || isNaN(+p.lon)) { problems.push("Couldn't add that place"); break; } d.places = d.places || {}; d.places[o.id] = { name: String(p.name), lat: +p.lat, lon: +p.lon }; lines.push(`Map: added ${p.name}`); break; }
+          case "add_leg": { const l = pick(o.leg, KEYS.leg); d.legs = d.legs || []; if (!d.places || !d.places[l.from] || !d.places[l.to]) { problems.push("A route leg used an unknown place"); break; } const i = Number.isInteger(o.index) ? o.index : d.legs.length; d.legs.splice(i, 0, l); lines.push(`Map: ${d.places[l.from].name} to ${d.places[l.to].name} on ${dayName(l.date)}`); break; }
+          case "update_leg": { const k = (d.legs || [])[o.index]; if (!k) { problems.push("No such route leg"); break; } const f = pick(o.fields, KEYS.leg); changed("Map leg", k, f); Object.assign(k, f); break; }
+          case "delete_leg": { const k = (d.legs || [])[o.index]; if (!k) { problems.push("No such route leg"); break; } d.legs.splice(o.index, 1); lines.push(`Map: removed ${k.from} to ${k.to}`); break; }
+          default: problems.push(`Skipped an edit the site doesn't understand (${o && o.op})`);
+        }
+      } catch (err) { problems.push("Skipped one edit that didn't fit the plan"); }
+    });
+    return { lines, problems };
+  }
+
+  async function askPlanner(text) {
+    text = (text || "").trim(); if (!text) { $("#ask-text").focus(); return; }
+    const c = aiCfg();
+    if (!c.key) { openAISetup(() => askPlanner(text)); return; }
+    const box = $("#ask"), go = $("#ask-go");
+    box.classList.add("is-busy"); go.disabled = true; go.textContent = "Thinking…";
+    try {
+      const res = await callGemini(c, text);
+      const ops = Array.isArray(res.operations) ? res.operations : [];
+      const preview = applyOps(clone(data), ops);
+      chat.push({ role: "user", text }, { role: "model", text: JSON.stringify({ reply: res.reply || "", operations: ops }) });
+      while (chat.length > 8) chat.shift();
+      $("#ask-text").value = "";
+      showPlannerResult(text, String(res.reply || ""), ops, preview);
+    } catch (err) { toast(err.message || "Something went wrong with the planner"); }
+    finally { box.classList.remove("is-busy"); go.disabled = false; go.textContent = "Ask"; }
+  }
+
+  function showPlannerResult(text, reply, ops, preview) {
+    const hasChanges = preview.lines.length > 0;
+    const canSave = !!store.get("token");
+    openDialog(hasChanges ? "Check these changes" : "Planner", `You asked: ${text}`,
+      `${reply ? `<p class="ai-reply">${esc(reply)}</p>` : ""}
+       ${hasChanges ? `<div class="share-block"><h3>What will change</h3><ul class="change-list">${preview.lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul></div>` : ""}
+       ${preview.problems.length ? `<p class="hint">Not done: ${esc(preview.problems.join(". "))}.</p>` : ""}
+       ${hasChanges ? `<p class="hint">Nothing changes until you press Apply. You can undo it afterwards.</p>` : ""}`,
+      hasChanges
+        ? `<div class="right"><button class="btn" type="submit" value="cancel" formnovalidate>Don't change</button>${canSave ? `<button class="btn" type="button" data-dlg="apply-save">Apply and save for everyone</button>` : ""}<button class="btn btn-primary" type="button" data-dlg="apply">Apply</button></div>`
+        : `<div class="right"><button class="btn btn-primary" type="submit" value="cancel">Done</button></div>`);
+    form.onclick = (e) => {
+      const b = e.target.closest("[data-dlg]"); if (!b) return;
+      const before = clone(data);
+      commit((d) => { applyOps(d, ops); });
+      const undo = () => { commit((d) => { Object.keys(d).forEach((k) => delete d[k]); Object.assign(d, clone(before)); }); hideBanner(); toast("Undone"); };
+      if (b.dataset.dlg === "apply-save") {
+        saveToGitHub(b, false, { who: store.get("name") || "Planner", repo: repoInfo(), token: store.get("token") });
+        return;
+      }
+      closeDialog();
+      showBanner(`The planner made ${preview.lines.length} ${preview.lines.length === 1 ? "change" : "changes"}. They're only on this device until you save for everyone.`, [
+        ["Undo", undo], ["Save for everyone", () => { hideBanner(); openShare(); }],
+      ]);
+    };
+  }
+
   // ---------- banner and toast ----------
   function showBanner(text, actions) {
     const b = $("#banner");
@@ -985,6 +1222,9 @@
   });
   $("#hero").addEventListener("click", (e) => { const b = e.target.closest("[data-go]"); if (b) { view = b.dataset.go; store.set("view", view); render(); } });
   $("#open-share").addEventListener("click", openShare);
+  $("#ask").addEventListener("submit", (e) => { e.preventDefault(); askPlanner($("#ask-text").value); });
+  $("#ask-settings").addEventListener("click", () => openAISetup());
+  $$("#ask [data-example]").forEach((b) => b.addEventListener("click", () => { const i = $("#ask-text"); i.value = b.dataset.example; i.focus(); }));
   // tap one price to flip just that price; the switch in the header flips them all
   document.addEventListener("click", (e) => {
     const m = e.target.closest(".money");
