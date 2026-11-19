@@ -1,6 +1,6 @@
 # India Itinerary 2027
 
-Our family plan for India, Dec 31, 2026 to Feb 5, 2027: Chennai, Kerala, Salem, Trichy, Pongal at home, the Mysuru, Tirupati and Mantralayam temple loop, and Jaipur and Udaipur.
+Our family plan for India, Dec 31, 2026 to Feb 5, 2027: Chennai, Kerala, Salem, Trichy, Pongal at home, Tirupati, Namakkal, Mantralayam and Navabrindavanam, and three nights in the Maldives.
 
 **Live site:** https://surya0901.github.io/india-itinerary-2027/
 
@@ -13,7 +13,7 @@ Our family plan for India, Dec 31, 2026 to Feb 5, 2027: Chennai, Kerala, Salem, 
 - **To-do** list with who does what and by when. Unbooked tickets show up here on their own.
 - **Budget** that adds everything up for the group. Prices switch between rupees and dollars at the live exchange rate: use the switch at the top, or tap any single price.
 - **Trip planner chat**: ask questions or ask for changes in plain words, then apply them for everyone.
-- **Good to know**: IRCTC rules, booking for 15 people, which class to pick, Tirumala darshan rules and links.
+- **Good to know**: IRCTC rules, booking for 15 people, which class to pick, Tirumala darshan rules, Maldives entry rules and links.
 - Calendar files you can add to your phone: the whole trip, or reminders for when each booking opens.
 
 ## Trip planner chat

@@ -324,7 +324,7 @@
     if (!libsPromise) {
       libsPromise = (window.d3 ? Promise.resolve() : loadScript("assets/vendor/d3.min.js"))
         .then(() => (window.topojson ? null : loadScript("assets/vendor/topojson-client.min.js")))
-        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js?v=9")));
+        .then(() => (window.TripGlobe ? null : loadScript("assets/globe.js?v=10")));
       libsPromise.catch(() => { libsPromise = null; });
     }
     return libsPromise;
@@ -599,14 +599,21 @@
         </ul></div>
         <div class="info"><h3>Tirumala darshan</h3><ul>
           <li>Book only on the official TTD site: <a href="https://ttdevasthanams.ap.gov.in/" target="_blank" rel="noopener">ttdevasthanams.ap.gov.in</a>.</li>
-          <li>January 2027 ₹300 tickets opened Oct 24, 2026 at 10 AM IST. Rooms opened the same day at 3 PM.</li>
+          <li>January 2027 ₹300 tickets opened Oct 24, 2026 at 10 AM IST. Jan 2 is a very busy day, so check soon.</li>
           <li>Elders 65+ and differently abled devotees have a separate quota.</li>
           <li>Carry the same photo ID used to book. Traditional dress is required.</li>
+        </ul></div>
+        <div class="info"><h3>Maldives</h3><ul>
+          <li>Indian passport holders get a free 30 day visa on arrival.</li>
+          <li>Passports should be valid for 6 months after the trip. Children need their own passport.</li>
+          <li>Fill in the <a href="https://imuga.immigration.gov.mv/" target="_blank" rel="noopener">IMUGA traveller declaration</a> within 96 hours before landing.</li>
+          <li>Carry the resort booking and return tickets. Immigration can ask for them.</li>
+          <li>Maldives time is 30 minutes behind India.</li>
         </ul></div>
         <div class="info"><h3>Useful links</h3><ul>
           <li><a href="https://www.irctc.co.in/" target="_blank" rel="noopener">IRCTC</a> to book trains</li>
           <li><a href="https://www.railmitra.com/" target="_blank" rel="noopener">RailMitra</a> and <a href="https://www.ixigo.com/trains" target="_blank" rel="noopener">ixigo</a> for timetables, fares and seat availability</li>
-          <li><a href="https://www.goindigo.in/" target="_blank" rel="noopener">IndiGo</a> and <a href="https://www.akasaair.com/" target="_blank" rel="noopener">Akasa Air</a> for Rajasthan flights</li>
+          <li><a href="https://www.goindigo.in/" target="_blank" rel="noopener">IndiGo</a> and <a href="https://imuga.immigration.gov.mv/" target="_blank" rel="noopener">IMUGA</a> for the Maldives flights</li>
           <li><a href="https://srsmatha.org/" target="_blank" rel="noopener">Sri Raghavendra Swamy Mutt</a> for Mantralayam rooms</li>
         </ul></div>
         <div class="info"><h3>How editing works</h3><ul>
@@ -1115,7 +1122,7 @@ Formats:
 
   // ---- free lookup tools the planner can call (no keys, no billing) ----
   const FN_DECLS = [
-    { name: "get_weather", description: "Daily weather for a town or city in India. Dates within the next two weeks get the forecast. Later dates get the actual weather on the same dates last year, as a guide.", parameters: { type: "OBJECT", properties: { place: { type: "STRING", description: "Town or city, for example Jaipur" }, start: { type: "STRING", description: "First date, YYYY-MM-DD" }, end: { type: "STRING", description: "Last date, YYYY-MM-DD, at most 14 days after start" } }, required: ["place", "start"] } },
+    { name: "get_weather", description: "Daily weather for a town or city in India or the Maldives. Dates within the next two weeks get the forecast. Later dates get the actual weather on the same dates last year, as a guide.", parameters: { type: "OBJECT", properties: { place: { type: "STRING", description: "Town or city, for example Guruvayur" }, start: { type: "STRING", description: "First date, YYYY-MM-DD" }, end: { type: "STRING", description: "Last date, YYYY-MM-DD, at most 14 days after start" } }, required: ["place", "start"] } },
     { name: "look_up", description: "Look up a place, temple, fort, festival, food or other topic on Wikipedia. Returns a short summary and a link.", parameters: { type: "OBJECT", properties: { query: { type: "STRING", description: "What to look up, for example Mehrangarh Fort" } }, required: ["query"] } },
   ];
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -1158,9 +1165,36 @@ Formats:
     } catch (e) { return { result: { error: "The lookup didn't work: " + e.message } }; }
   }
 
+  // reads a Gemini answer, streamed (server-sent events) or as one JSON reply, into one response
+  async function readGemini(r) {
+    if (!/event-stream/i.test(r.headers.get("Content-Type") || "")) return r.json();
+    const reader = r.body.getReader(), dec = new TextDecoder();
+    const parts = []; let gm = null, buf = "", finish = "";
+    const take = (line) => {
+      if (!line.startsWith("data:")) return;
+      const raw = line.slice(5).trim(); if (!raw || raw === "[DONE]") return;
+      let j; try { j = JSON.parse(raw); } catch (e) { return; }
+      if (j.error) throw new Error((j.error.message || "Gemini stopped partway through").slice(0, 200));
+      const cand = (j.candidates || [])[0] || {};
+      ((cand.content || {}).parts || []).forEach((p) => { if (p.functionCall || p.thoughtSignature || p.text) parts.push(p); });
+      if (cand.groundingMetadata) gm = cand.groundingMetadata;
+      if (cand.finishReason) finish = cand.finishReason;
+    };
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (value) buf += dec.decode(value, { stream: true });
+      let i; while ((i = buf.indexOf("\n")) >= 0) { take(buf.slice(0, i).replace(/\r$/, "")); buf = buf.slice(i + 1); }
+      if (done) { take(buf.trim()); break; }
+    }
+    const cand = { content: { role: "model", parts } };
+    if (gm) cand.groundingMetadata = gm;
+    if (finish) cand.finishReason = finish;
+    return { candidates: [cand] };
+  }
+
   async function callGemini(c, text, history) {
     let model = c.model || GEMINI_MODELS[0][0];
-    const urlFor = (m) => `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`;
+    const urlFor = (m) => `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:streamGenerateContent?alt=sse`; // streamed, so long answers don't time out
     const now = new Date();
     const windows = data.tickets.map((t) => { const st = bookingState(t, now); return `- ${t.id}: ${tixLabel(t)} on ${t.date}: ${st.key === "booked" ? "booked" : st.at ? (st.at <= now ? "booking opened " : "booking opens ") + fmtIST(st.at) + " IST" : "can be booked any time"}`; }).join("\n");
     const sys = `${AI_RULES}\n\nToday is ${now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: IST })} in India.\nBooking windows worked out by the site (Indian Railways opens 60 days ahead at 8 AM IST; use these for any question about what to book and when):\n${windows}\n\nCurrent plan JSON:\n${JSON.stringify(data)}`;
@@ -1177,7 +1211,7 @@ Formats:
       return b;
     };
     const send = (b) => W()
-      ? fetch(W() + "/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.assign({ model }, b)) })
+      ? fetch(W() + "/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.assign({ model, stream: true }, b)) })
       : fetch(urlFor(model), { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": c.key }, body: JSON.stringify(b) });
 
     for (let round = 0; round < 4; round++) {
@@ -1196,7 +1230,8 @@ Formats:
         break;
       }
       if (!r.ok) {
-        let msg = ""; try { const raw = await r.json(); msg = typeof raw.error === "string" ? raw.error : ((raw.error || {}).message || ""); } catch (e) {}
+        let msg = ""; try { let raw = await r.json(); if (Array.isArray(raw)) raw = raw[0] || {}; msg = typeof raw.error === "string" ? raw.error : ((raw.error || {}).message || ""); } catch (e) {}
+        if (r.status === 524 || r.status === 504) throw new Error("Gemini took too long on that one. Try again, or split a big change into a few smaller messages.");
         if (r.status === 503) throw new Error(/demand|overload|unavailable/i.test(msg) || !msg ? "Gemini is very busy right now. Try again in a minute." : msg);
         if (r.status === 400 && /api key/i.test(msg)) throw new Error("Gemini didn't accept the key. Open the planner settings and check it.");
         if (r.status === 403) throw new Error("This key isn't allowed to use the Gemini API.");
@@ -1204,7 +1239,7 @@ Formats:
         if (r.status === 429) throw new Error(W() && msg && !/quota|exhausted/i.test(msg) ? msg : "Gemini's free limit is used up for now. Try again in a minute.");
         throw new Error(`Gemini returned an error (${r.status}). ${msg.slice(0, 160)}`);
       }
-      const j = await r.json();
+      const j = await readGemini(r);
       const cand = (j.candidates || [])[0] || {};
       const parts = (cand.content || {}).parts || [];
       const gm = cand.groundingMetadata || {};
@@ -1338,7 +1373,7 @@ Formats:
   const undoSnapshots = {}; // message id -> plan before that change (this visit only)
   let chatBusy = false;
   const saveChat = () => { while (chatLog.length > 40) chatLog.shift(); store.set("chatlog", chatLog.map((m) => (m.changes ? Object.assign({}, m, { changes: Object.assign({}, m.changes, { ops: m.changes.state === "pending" ? m.changes.ops : [] }) }) : m))); };
-  const EXAMPLES = ["Show me the temple loop days", "What's the weather in Jaipur in late January?", "What do we need to book this week?", "Move Trichy to Jan 20 and 21", "We booked 22639, PNR 4521234567", "Add dinner at Saravana Bhavan on Jan 2 at 7 PM", "What are the darshan timings at Mantralayam?"];
+  const EXAMPLES = ["Show me the temple trip days", "What's the weather in the Maldives in late January?", "What do we need to book this week?", "Move Trichy to Jan 20 and 21", "We booked 22639, PNR 4521234567", "Add dinner at Saravana Bhavan on Jan 2 at 7 PM", "What are the darshan timings at Mantralayam?"];
 
   function openChat(focus = true) {
     const c = $("#chat"); c.hidden = false; $("#chat-fab").setAttribute("aria-expanded", "true"); document.body.classList.add("chat-open");

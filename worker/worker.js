@@ -69,12 +69,15 @@ export default {
       else if (t0 && Array.isArray(t0.functionDeclarations) && t0.functionDeclarations.length <= 4 && t0.functionDeclarations.every((f) => f && ["get_weather", "look_up"].includes(f.name))) tools = [{ functionDeclarations: t0.functionDeclarations }];
       const payload = JSON.stringify({ systemInstruction: body.systemInstruction, contents: body.contents, generationConfig: body.generationConfig, tools });
       if (payload.length > 600000) return json({ error: "That request is too large" }, 413);
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      // streamed answers start arriving right away, so long requests don't hit the 100 second timeout
+      const stream = body.stream === true;
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:${stream ? "streamGenerateContent?alt=sse" : "generateContent"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
         body: payload,
       });
-      return new Response(r.body, { status: r.status, headers: { ...cors, "Content-Type": "application/json" } });
+      const type = stream && r.ok ? "text/event-stream" : "application/json";
+      return new Response(r.body, { status: r.status, headers: { ...cors, "Content-Type": type, "Cache-Control": "no-store" } });
     }
 
     if (url.pathname === "/save") {
